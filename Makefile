@@ -12,7 +12,9 @@ include $(THEOS)/makefiles/common.mk
 TWEAK_NAME = AndroidBackGesture
 
 AndroidBackGesture_FILES = Tweak.xm
-AndroidBackGesture_CFLAGS = -fobjc-arc
+
+AndroidBackGesture_CFLAGS = \
+	-fobjc-arc
 
 AndroidBackGesture_FRAMEWORKS = \
 	UIKit \
