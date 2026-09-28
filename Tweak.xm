@@ -1,7 +1,6 @@
 #import <UIKit/UIKit.h>
 #import <WebKit/WebKit.h>
 #import <QuartzCore/QuartzCore.h>
-
 #import <objc/runtime.h>
 
 #pragma mark - Constants
@@ -18,12 +17,11 @@ typedef NS_ENUM(NSInteger, ABGEdgeSide) {
     ABGEdgeSideRight = 2
 };
 
-#pragma mark - Associated object keys
+#pragma mark - Associated keys
 
 static char kABGPanGestureKey;
 static char kABGSideKey;
 static char kABGThresholdKey;
-static char kABGNativePopOriginalKey;
 
 #pragma mark - Preferences
 
@@ -35,15 +33,15 @@ static BOOL gABGRightEnabled = YES;
 static BOOL gABGShowIndicator = YES;
 static BOOL gABGHapticsEnabled = YES;
 
-static BOOL gABGPreferNativeLeft = NO;
+static BOOL gABGPreferNativeLeft = YES;
 
 static CGFloat gABGEdgeWidth = 28.0;
-static CGFloat gABGTriggerDistance = 78.0;
+static CGFloat gABGTriggerDistance = 72.0;
 static CGFloat gABGMinimumVelocity = 650.0;
 
 static NSSet<NSString *> *gABGBlacklist = nil;
 
-#pragma mark - Preferences helpers
+#pragma mark - Preference helpers
 
 static id ABGCopyPreference(NSString *key)
 {
@@ -62,32 +60,30 @@ static id ABGCopyPreference(NSString *key)
 
 static BOOL ABGBoolPreference(
     NSString *key,
-    BOOL defaultValue
+    BOOL fallback
 )
 {
-    id value =
-        ABGCopyPreference(key);
+    id value = ABGCopyPreference(key);
 
     if ([value isKindOfClass:[NSNumber class]]) {
         return [value boolValue];
     }
 
-    return defaultValue;
+    return fallback;
 }
 
 static CGFloat ABGFloatPreference(
     NSString *key,
-    CGFloat defaultValue
+    CGFloat fallback
 )
 {
-    id value =
-        ABGCopyPreference(key);
+    id value = ABGCopyPreference(key);
 
     if ([value respondsToSelector:@selector(doubleValue)]) {
         return (CGFloat)[value doubleValue];
     }
 
-    return defaultValue;
+    return fallback;
 }
 
 static NSSet<NSString *> *
@@ -97,29 +93,22 @@ ABGParseBlacklist(id value)
         return [NSSet set];
     }
 
-    NSString *string =
-        (NSString *)value;
+    NSCharacterSet *separator =
+        [NSCharacterSet characterSetWithCharactersInString:
+            @",;\n\r\t "];
 
-    NSCharacterSet *separatorSet =
-        [NSCharacterSet
-            characterSetWithCharactersInString:
-                @",;\n\r\t "];
-
-    NSArray<NSString *> *components =
-        [string
-            componentsSeparatedByCharactersInSet:
-                separatorSet];
+    NSArray<NSString *> *parts =
+        [(NSString *)value
+            componentsSeparatedByCharactersInSet:separator];
 
     NSMutableSet<NSString *> *result =
         [NSMutableSet set];
 
-    for (NSString *item in components) {
+    for (NSString *part in parts) {
 
         NSString *clean =
-            [item
-                stringByTrimmingCharactersInSet:
-                    [NSCharacterSet
-                        whitespaceAndNewlineCharacterSet]];
+            [part stringByTrimmingCharactersInSet:
+                [NSCharacterSet whitespaceAndNewlineCharacterSet]];
 
         if (clean.length > 0) {
             [result addObject:clean];
@@ -132,121 +121,89 @@ ABGParseBlacklist(id value)
 static void ABGLoadPreferences(void)
 {
     CFPreferencesAppSynchronize(
-        (__bridge CFStringRef)
-            ABGPreferencesDomain
+        (__bridge CFStringRef)ABGPreferencesDomain
     );
 
     gABGEnabled =
-        ABGBoolPreference(
-            @"enabled",
-            YES
-        );
+        ABGBoolPreference(@"enabled", YES);
 
     gABGLeftEnabled =
-        ABGBoolPreference(
-            @"leftEnabled",
-            YES
-        );
+        ABGBoolPreference(@"leftEnabled", YES);
 
     gABGRightEnabled =
-        ABGBoolPreference(
-            @"rightEnabled",
-            YES
-        );
+        ABGBoolPreference(@"rightEnabled", YES);
 
     gABGShowIndicator =
-        ABGBoolPreference(
-            @"showIndicator",
-            YES
-        );
+        ABGBoolPreference(@"showIndicator", YES);
 
     gABGHapticsEnabled =
-        ABGBoolPreference(
-            @"haptics",
-            YES
-        );
-
-    gABGPreferNativeLeft =
-        ABGBoolPreference(
-            @"preferNativeLeft",
-            NO
-        );
-
-    gABGEdgeWidth =
-        ABGFloatPreference(
-            @"edgeWidth",
-            28.0
-        );
-
-    gABGTriggerDistance =
-        ABGFloatPreference(
-            @"triggerDistance",
-            78.0
-        );
-
-    gABGMinimumVelocity =
-        ABGFloatPreference(
-            @"minimumVelocity",
-            650.0
-        );
+        ABGBoolPreference(@"haptics", YES);
 
     /*
-     Chặn giá trị lỗi / bất thường.
+     SAFE V2.2:
+     mặc định nhường cạnh trái cho gesture gốc iOS
+     nếu UINavigationController có hỗ trợ.
+
+     Mép phải vẫn luôn là Android Back.
     */
+    gABGPreferNativeLeft =
+        ABGBoolPreference(@"preferNativeLeft", YES);
 
     gABGEdgeWidth =
-        MAX(
-            8.0,
-            MIN(
-                gABGEdgeWidth,
-                100.0
-            )
-        );
+        ABGFloatPreference(@"edgeWidth", 28.0);
 
     gABGTriggerDistance =
-        MAX(
-            30.0,
-            MIN(
-                gABGTriggerDistance,
-                220.0
-            )
-        );
+        ABGFloatPreference(@"triggerDistance", 72.0);
 
     gABGMinimumVelocity =
-        MAX(
-            100.0,
-            MIN(
-                gABGMinimumVelocity,
-                2500.0
-            )
-        );
+        ABGFloatPreference(@"minimumVelocity", 650.0);
 
-    id blacklist =
-        ABGCopyPreference(
-            @"blacklist"
-        );
+    gABGEdgeWidth =
+        MAX(8.0, MIN(gABGEdgeWidth, 80.0));
+
+    gABGTriggerDistance =
+        MAX(30.0, MIN(gABGTriggerDistance, 180.0));
+
+    gABGMinimumVelocity =
+        MAX(150.0, MIN(gABGMinimumVelocity, 2000.0));
 
     gABGBlacklist =
         ABGParseBlacklist(
-            blacklist
+            ABGCopyPreference(@"blacklist")
         );
 }
 
-#pragma mark - Process checking
+#pragma mark - Process safety
+
+static NSString *ABGBundleIdentifier(void)
+{
+    return NSBundle.mainBundle.bundleIdentifier;
+}
+
+static BOOL ABGIsSpringBoard(void)
+{
+    NSString *bundleID =
+        ABGBundleIdentifier();
+
+    return
+        [bundleID
+            isEqualToString:
+                @"com.apple.springboard"];
+}
 
 static BOOL ABGProcessAllowed(void)
 {
     NSString *bundleID =
-        NSBundle.mainBundle.bundleIdentifier;
+        ABGBundleIdentifier();
 
     if (!bundleID) {
         return NO;
     }
 
     /*
-     Không chạy trong SpringBoard.
+     CỰC KỲ QUAN TRỌNG:
+     tuyệt đối không chạy logic gesture trong SpringBoard.
     */
-
     if ([bundleID
             isEqualToString:
                 @"com.apple.springboard"]) {
@@ -255,12 +212,15 @@ static BOOL ABGProcessAllowed(void)
     }
 
     /*
-     Không chạy trong app blacklist.
+     Tránh Preferences bundle host đặc biệt nếu không phải
+     UIApplication bình thường.
     */
+    if (![UIApplication class]) {
+        return NO;
+    }
 
     if (gABGBlacklist &&
-        [gABGBlacklist
-            containsObject:bundleID]) {
+        [gABGBlacklist containsObject:bundleID]) {
 
         return NO;
     }
@@ -278,32 +238,38 @@ static BOOL ABGWindowAllowed(
         return NO;
     }
 
-    if (window.windowLevel !=
-        UIWindowLevelNormal) {
+    if (window.hidden) {
+        return NO;
+    }
 
+    if (window.alpha <= 0.01) {
+        return NO;
+    }
+
+    /*
+     Không gắn vào keyboard / alert / overlay level.
+    */
+    if (window.windowLevel != UIWindowLevelNormal) {
         return NO;
     }
 
     NSString *className =
-        NSStringFromClass(
-            window.class
-        );
+        NSStringFromClass(window.class);
 
     NSArray<NSString *> *ignored = @[
         @"Keyboard",
         @"TextEffects",
         @"RemoteKeyboard",
         @"InputWindow",
-        @"UITextEffects"
+        @"UITextEffects",
+        @"Alert"
     ];
 
-    for (NSString *keyword
-         in ignored) {
+    for (NSString *word in ignored) {
 
         if ([className
-                rangeOfString:keyword
-                options:
-                    NSCaseInsensitiveSearch]
+                rangeOfString:word
+                options:NSCaseInsensitiveSearch]
                 .location != NSNotFound) {
 
             return NO;
@@ -313,85 +279,73 @@ static BOOL ABGWindowAllowed(
     return YES;
 }
 
-#pragma mark - ViewController helpers
+#pragma mark - UIViewController helpers
 
 static UIViewController *
-ABGVisibleViewController(
-    UIViewController *vc
+ABGVisibleController(
+    UIViewController *controller
 )
 {
-    if (!vc) {
+    if (!controller) {
         return nil;
     }
 
     UIViewController *presented =
-        vc.presentedViewController;
+        controller.presentedViewController;
 
     if (presented &&
         !presented.isBeingDismissed) {
 
         return
-            ABGVisibleViewController(
-                presented
-            );
+            ABGVisibleController(presented);
     }
 
-    if ([vc
+    if ([controller
             isKindOfClass:
                 [UINavigationController class]]) {
 
         UINavigationController *nav =
-            (UINavigationController *)vc;
-
-        UIViewController *visible =
-            nav.visibleViewController;
+            (UINavigationController *)controller;
 
         return
-            ABGVisibleViewController(
-                visible ?: nav
+            ABGVisibleController(
+                nav.visibleViewController ?: nav
             );
     }
 
-    if ([vc
+    if ([controller
             isKindOfClass:
                 [UITabBarController class]]) {
 
-        UITabBarController *tabs =
-            (UITabBarController *)vc;
-
-        UIViewController *selected =
-            tabs.selectedViewController;
+        UITabBarController *tab =
+            (UITabBarController *)controller;
 
         return
-            ABGVisibleViewController(
-                selected ?: tabs
+            ABGVisibleController(
+                tab.selectedViewController ?: tab
             );
     }
 
-    if ([vc
+    if ([controller
             isKindOfClass:
                 [UISplitViewController class]]) {
 
         UISplitViewController *split =
-            (UISplitViewController *)vc;
+            (UISplitViewController *)controller;
 
         UIViewController *last =
             split.viewControllers.lastObject;
 
         if (last) {
-
-            return
-                ABGVisibleViewController(
-                    last
-                );
+            return ABGVisibleController(last);
         }
     }
 
-    return vc;
+    return controller;
 }
 
 static UIViewController *
-ABGTopViewControllerForWindow(
+ABGTopController(
     UIWindow *window
 )
 {
@@ -400,29 +354,24 @@ ABGTopViewControllerForWindow(
     }
 
     return
-        ABGVisibleViewController(
+        ABGVisibleController(
             window.rootViewController
         );
 }
 
-#pragma mark - First responder
+#pragma mark - First responder / keyboard
 
-static __weak UIResponder *
-gABGFirstResponder = nil;
+static __weak UIResponder *gABGFirstResponder = nil;
 
-@interface UIResponder
-(AndroidBackGestureFirstResponder)
+@interface UIResponder (ABGResponder)
 
-- (void)abg_captureFirstResponder:
-    (id)sender;
+- (void)abg_captureResponder:(id)sender;
 
 @end
 
-@implementation UIResponder
-(AndroidBackGestureFirstResponder)
+@implementation UIResponder (ABGResponder)
 
-- (void)abg_captureFirstResponder:
-    (id)sender
+- (void)abg_captureResponder:(id)sender
 {
     gABGFirstResponder = self;
 }
@@ -435,38 +384,15 @@ ABGFindFirstResponder(void)
     gABGFirstResponder = nil;
 
     [UIApplication.sharedApplication
-        sendAction:
-            @selector(
-                abg_captureFirstResponder:
-            )
+        sendAction:@selector(abg_captureResponder:)
         to:nil
         from:nil
         forEvent:nil];
 
-    return
-        gABGFirstResponder;
+    return gABGFirstResponder;
 }
 
-static BOOL ABGKeyboardIsOpen(void)
-{
-    UIResponder *responder =
-        ABGFindFirstResponder();
-
-    if (!responder) {
-        return NO;
-    }
-
-    if ([responder
-            conformsToProtocol:
-                @protocol(UITextInput)]) {
-
-        return YES;
-    }
-
-    return NO;
-}
-
-static BOOL ABGHideKeyboard(void)
+static BOOL ABGHideKeyboardIfNeeded(void)
 {
     UIResponder *responder =
         ABGFindFirstResponder();
@@ -483,14 +409,13 @@ static BOOL ABGHideKeyboard(void)
     }
 
     return
-        [responder
-            resignFirstResponder];
+        [responder resignFirstResponder];
 }
 
 #pragma mark - WKWebView
 
 static WKWebView *
-ABGFindWebViewInView(
+ABGFindWebView(
     UIView *view
 )
 {
@@ -508,97 +433,75 @@ ABGFindWebViewInView(
             isKindOfClass:
                 [WKWebView class]]) {
 
-        return
-            (WKWebView *)view;
+        return (WKWebView *)view;
     }
 
     for (UIView *subview
          in view.subviews) {
 
-        WKWebView *result =
-            ABGFindWebViewInView(
-                subview
-            );
+        WKWebView *found =
+            ABGFindWebView(subview);
 
-        if (result) {
-            return result;
+        if (found) {
+            return found;
         }
     }
 
     return nil;
 }
 
-static WKWebView *
-ABGFindCurrentWebView(
+static BOOL ABGWebBack(
     UIWindow *window
 )
 {
-    UIViewController *vc =
-        ABGTopViewControllerForWindow(
-            window
-        );
+    UIViewController *controller =
+        ABGTopController(window);
 
-    if (!vc) {
-        return nil;
-    }
+    if (!controller ||
+        !controller.isViewLoaded) {
 
-    if (!vc.isViewLoaded) {
-        return nil;
-    }
-
-    return
-        ABGFindWebViewInView(
-            vc.view
-        );
-}
-
-#pragma mark - Back actions
-
-static BOOL ABGGoBackInWebView(
-    UIWindow *window
-)
-{
-    WKWebView *webView =
-        ABGFindCurrentWebView(
-            window
-        );
-
-    if (!webView) {
         return NO;
     }
 
-    if (!webView.canGoBack) {
+    WKWebView *web =
+        ABGFindWebView(
+            controller.view
+        );
+
+    if (!web ||
+        !web.canGoBack) {
+
         return NO;
     }
 
-    [webView goBack];
+    [web goBack];
 
     return YES;
 }
 
-static BOOL ABGPopNavigation(
+#pragma mark - Navigation Back
+
+static BOOL ABGNavigationBack(
     UIWindow *window
 )
 {
-    UIViewController *vc =
-        ABGTopViewControllerForWindow(
-            window
-        );
+    UIViewController *controller =
+        ABGTopController(window);
 
-    if (!vc) {
+    if (!controller) {
         return NO;
     }
 
     UINavigationController *nav =
-        vc.navigationController;
+        controller.navigationController;
 
     if (!nav &&
-        [vc
+        [controller
             isKindOfClass:
                 [UINavigationController class]]) {
 
         nav =
-            (UINavigationController *)vc;
+            (UINavigationController *)controller;
     }
 
     if (!nav) {
@@ -609,234 +512,146 @@ static BOOL ABGPopNavigation(
         return NO;
     }
 
-    id<UIViewControllerTransitionCoordinator>
-        coordinator =
-            nav.transitionCoordinator;
-
-    if (coordinator &&
-        coordinator.isAnimated) {
+    /*
+     Không pop giữa lúc transition đang chạy.
+    */
+    if (nav.transitionCoordinator &&
+        nav.transitionCoordinator.isAnimated) {
 
         return NO;
     }
 
-    [nav
-        popViewControllerAnimated:YES];
+    [nav popViewControllerAnimated:YES];
 
     return YES;
 }
 
-static BOOL ABGDismissModal(
+#pragma mark - Modal Back
+
+static BOOL ABGModalBack(
     UIWindow *window
 )
 {
-    UIViewController *vc =
-        ABGTopViewControllerForWindow(
-            window
-        );
+    UIViewController *controller =
+        ABGTopController(window);
 
-    if (!vc) {
+    if (!controller) {
         return NO;
     }
 
-    UIViewController *candidate =
-        vc;
+    UIViewController *dismissTarget =
+        controller;
 
-    if (vc.navigationController &&
-        vc.navigationController
+    if (controller.navigationController &&
+        controller.navigationController
             .presentingViewController) {
 
-        candidate =
-            vc.navigationController;
+        dismissTarget =
+            controller.navigationController;
     }
 
-    if (!candidate
-            .presentingViewController) {
-
+    if (!dismissTarget.presentingViewController) {
         return NO;
     }
 
-    if (candidate
-            .isBeingDismissed) {
-
+    if (dismissTarget.isBeingDismissed) {
         return NO;
     }
 
-    [candidate
+    [dismissTarget
         dismissViewControllerAnimated:YES
         completion:nil];
 
     return YES;
 }
 
-static BOOL
-ABGPerformAccessibilityEscape(
-    UIWindow *window
-)
-{
-    UIViewController *vc =
-        ABGTopViewControllerForWindow(
-            window
-        );
-
-    if (!vc) {
-        return NO;
-    }
-
-    return
-        [vc
-            accessibilityPerformEscape];
-}
+#pragma mark - Perform Back
 
 static BOOL ABGPerformBack(
     UIWindow *window
 )
 {
     /*
-     Thứ tự:
-
-     1. Đóng keyboard
-     2. WKWebView goBack
-     3. UINavigationController pop
-     4. Modal dismiss
-     5. Accessibility escape
+     Android-like priority.
     */
 
-    if (ABGKeyboardIsOpen()) {
-
-        if (ABGHideKeyboard()) {
-            return YES;
-        }
-    }
-
-    if (ABGGoBackInWebView(window)) {
+    if (ABGHideKeyboardIfNeeded()) {
         return YES;
     }
 
-    if (ABGPopNavigation(window)) {
+    if (ABGWebBack(window)) {
         return YES;
     }
 
-    if (ABGDismissModal(window)) {
+    if (ABGNavigationBack(window)) {
         return YES;
     }
 
-    if (ABGPerformAccessibilityEscape(
-            window)) {
-
+    if (ABGModalBack(window)) {
         return YES;
+    }
+
+    /*
+     Fallback an toàn.
+    */
+    UIViewController *top =
+        ABGTopController(window);
+
+    if (top) {
+        return
+            [top accessibilityPerformEscape];
     }
 
     return NO;
 }
 
-#pragma mark - High priority edge recognizer
+#pragma mark - Indicator
 
-/*
- Quan trọng:
+@interface ABGBackIndicatorView : UIView
 
- Recognizer này được ưu tiên hơn pan/scroll
- của nội dung bên trong app.
-
- Khi nó nhận ra edge-back:
- - scroll view bị hủy
- - collection view bị hủy
- - web view không kéo theo
- - game/app không tiếp tục nhận swipe
-*/
-
-@interface ABGEdgePanGestureRecognizer :
-    UIPanGestureRecognizer
-@end
-
-@implementation ABGEdgePanGestureRecognizer
-
-- (BOOL)canPreventGestureRecognizer:
-    (UIGestureRecognizer *)
-        preventedGestureRecognizer
-{
-    /*
-     Edge Back được phép chặn recognizer khác.
-    */
-
-    return YES;
-}
-
-- (BOOL)canBePreventedByGestureRecognizer:
-    (UIGestureRecognizer *)
-        preventingGestureRecognizer
-{
-    /*
-     Không cho scroll/pan bên trong chặn Edge Back.
-    */
-
-    return NO;
-}
-
-@end
-
-#pragma mark - Back indicator
-
-@interface ABGBackIndicatorView :
-    UIView
-
-@property (nonatomic, strong)
+@property(nonatomic, strong)
     CAShapeLayer *arrowLayer;
 
-@property (nonatomic, assign)
-    ABGEdgeSide edgeSide;
+@property(nonatomic, assign)
+    ABGEdgeSide side;
 
-- (instancetype)initWithEdgeSide:
+- (instancetype)initWithSide:
     (ABGEdgeSide)side;
 
-- (void)setProgress:
+- (void)setGestureProgress:
     (CGFloat)progress;
 
 @end
 
 @implementation ABGBackIndicatorView
 
-- (instancetype)initWithEdgeSide:
+- (instancetype)initWithSide:
     (ABGEdgeSide)side
 {
     self =
-        [super
-            initWithFrame:
-                CGRectMake(
-                    0,
-                    0,
-                    52,
-                    52
-                )];
+        [super initWithFrame:
+            CGRectMake(0, 0, 48, 48)];
 
     if (self) {
 
-        _edgeSide = side;
+        _side = side;
 
-        self.userInteractionEnabled =
-            NO;
+        self.userInteractionEnabled = NO;
 
         self.backgroundColor =
             [UIColor.systemBlueColor
-                colorWithAlphaComponent:
-                    0.92];
+                colorWithAlphaComponent:0.92];
 
-        self.layer.cornerRadius =
-            26.0;
+        self.layer.cornerRadius = 24.0;
+
+        self.layer.shadowOpacity = 0.18;
+        self.layer.shadowRadius = 6.0;
+
+        self.layer.shadowOffset =
+            CGSizeMake(0.0, 2.0);
 
         self.layer.shadowColor =
             UIColor.blackColor.CGColor;
-
-        self.layer.shadowOpacity =
-            0.22;
-
-        self.layer.shadowRadius =
-            7.0;
-
-        self.layer.shadowOffset =
-            CGSizeMake(
-                0,
-                2
-            );
 
         _arrowLayer =
             [CAShapeLayer layer];
@@ -844,11 +659,9 @@ static BOOL ABGPerformBack(
         _arrowLayer.strokeColor =
             UIColor.whiteColor.CGColor;
 
-        _arrowLayer.fillColor =
-            nil;
+        _arrowLayer.fillColor = nil;
 
-        _arrowLayer.lineWidth =
-            3.2;
+        _arrowLayer.lineWidth = 3.0;
 
         _arrowLayer.lineCap =
             kCALineCapRound;
@@ -857,8 +670,7 @@ static BOOL ABGPerformBack(
             kCALineJoinRound;
 
         [self.layer
-            addSublayer:
-                _arrowLayer];
+            addSublayer:_arrowLayer];
 
         [self rebuildArrow];
     }
@@ -871,116 +683,61 @@ static BOOL ABGPerformBack(
     UIBezierPath *path =
         [UIBezierPath bezierPath];
 
-    /*
-     Mép trái -> mũi tên <
-     Mép phải -> mũi tên >
-    */
-
-    if (self.edgeSide ==
+    if (self.side ==
         ABGEdgeSideLeft) {
 
-        [path
-            moveToPoint:
-                CGPointMake(
-                    31,
-                    16
-                )];
+        /*
+         <
+        */
+        [path moveToPoint:
+            CGPointMake(29, 15)];
 
-        [path
-            addLineToPoint:
-                CGPointMake(
-                    20,
-                    26
-                )];
+        [path addLineToPoint:
+            CGPointMake(18, 24)];
 
-        [path
-            addLineToPoint:
-                CGPointMake(
-                    31,
-                    36
-                )];
+        [path addLineToPoint:
+            CGPointMake(29, 33)];
 
-        [path
-            moveToPoint:
-                CGPointMake(
-                    21,
-                    26
-                )];
+        [path moveToPoint:
+            CGPointMake(19, 24)];
 
-        [path
-            addLineToPoint:
-                CGPointMake(
-                    37,
-                    26
-                )];
+        [path addLineToPoint:
+            CGPointMake(35, 24)];
 
     } else {
 
-        [path
-            moveToPoint:
-                CGPointMake(
-                    21,
-                    16
-                )];
+        /*
+         >
+        */
+        [path moveToPoint:
+            CGPointMake(19, 15)];
 
-        [path
-            addLineToPoint:
-                CGPointMake(
-                    32,
-                    26
-                )];
+        [path addLineToPoint:
+            CGPointMake(30, 24)];
 
-        [path
-            addLineToPoint:
-                CGPointMake(
-                    21,
-                    36
-                )];
+        [path addLineToPoint:
+            CGPointMake(19, 33)];
 
-        [path
-            moveToPoint:
-                CGPointMake(
-                    31,
-                    26
-                )];
+        [path moveToPoint:
+            CGPointMake(29, 24)];
 
-        [path
-            addLineToPoint:
-                CGPointMake(
-                    15,
-                    26
-                )];
+        [path addLineToPoint:
+            CGPointMake(13, 24)];
     }
 
     self.arrowLayer.path =
         path.CGPath;
 }
 
-- (void)setProgress:
+- (void)setGestureProgress:
     (CGFloat)progress
 {
-    CGFloat normalized =
-        MAX(
-            0.0,
-            MIN(
-                progress,
-                1.25
-            )
-        );
+    CGFloat p =
+        MAX(0.0, MIN(progress, 1.0));
 
     CGFloat scale =
-        0.72 +
-        (
-            MIN(
-                normalized,
-                1.0
-            ) *
-            0.28
-        );
-
-    if (normalized >= 1.0) {
-        scale = 1.08;
-    }
+        0.78 +
+        p * 0.22;
 
     self.transform =
         CGAffineTransformMakeScale(
@@ -989,113 +746,11 @@ static BOOL ABGPerformBack(
         );
 
     self.alpha =
-        0.30 +
-        (
-            MIN(
-                normalized,
-                1.0
-            ) *
-            0.70
-        );
+        0.35 +
+        p * 0.65;
 }
 
 @end
-
-#pragma mark - Native iOS pop policy
-
-static void
-ABGApplyNativePopPolicy(
-    UINavigationController *nav
-)
-{
-    if (!nav) {
-        return;
-    }
-
-    UIGestureRecognizer *gesture =
-        nav.interactivePopGestureRecognizer;
-
-    if (!gesture) {
-        return;
-    }
-
-    BOOL useCustomLeft =
-        gABGEnabled &&
-        gABGLeftEnabled &&
-        !gABGPreferNativeLeft &&
-        ABGProcessAllowed();
-
-    NSNumber *storedOriginal =
-        objc_getAssociatedObject(
-            nav,
-            &kABGNativePopOriginalKey
-        );
-
-    if (useCustomLeft) {
-
-        if (!storedOriginal) {
-
-            objc_setAssociatedObject(
-                nav,
-                &kABGNativePopOriginalKey,
-                @(gesture.enabled),
-                OBJC_ASSOCIATION_RETAIN_NONATOMIC
-            );
-        }
-
-        gesture.enabled = NO;
-
-    } else {
-
-        if (storedOriginal) {
-
-            gesture.enabled =
-                [storedOriginal
-                    boolValue];
-
-            objc_setAssociatedObject(
-                nav,
-                &kABGNativePopOriginalKey,
-                nil,
-                OBJC_ASSOCIATION_RETAIN_NONATOMIC
-            );
-        }
-    }
-}
-
-static void
-ABGApplyNativePopPolicyRecursively(
-    UIViewController *vc
-)
-{
-    if (!vc) {
-        return;
-    }
-
-    if ([vc
-            isKindOfClass:
-                [UINavigationController class]]) {
-
-        ABGApplyNativePopPolicy(
-            (UINavigationController *)vc
-        );
-    }
-
-    for (UIViewController *child
-         in vc.childViewControllers) {
-
-        ABGApplyNativePopPolicyRecursively(
-            child
-        );
-    }
-
-    if (vc.presentedViewController) {
-
-        ABGApplyNativePopPolicyRecursively(
-            vc.presentedViewController
-        );
-    }
-}
 
 #pragma mark - Gesture handler
 
@@ -1103,16 +758,16 @@ ABGApplyNativePopPolicyRecursively(
     NSObject
     <UIGestureRecognizerDelegate>
 
-@property (nonatomic, strong)
+@property(nonatomic, strong)
     ABGBackIndicatorView *indicator;
 
-@property (nonatomic, weak)
+@property(nonatomic, weak)
     UIWindow *indicatorWindow;
 
 + (instancetype)shared;
 
 - (void)handlePan:
-    (UIPanGestureRecognizer *)gesture;
+    (UIPanGestureRecognizer *)pan;
 
 @end
 
@@ -1120,70 +775,58 @@ ABGApplyNativePopPolicyRecursively(
 
 + (instancetype)shared
 {
-    static ABGGestureHandler *handler =
-        nil;
+    static ABGGestureHandler *handler = nil;
 
     static dispatch_once_t onceToken;
 
     dispatch_once(
         &onceToken,
         ^{
-
             handler =
-                [[ABGGestureHandler alloc]
-                    init];
-
+                [[ABGGestureHandler alloc] init];
         }
     );
 
     return handler;
 }
 
-#pragma mark Indicator
+#pragma mark - Indicator
 
-- (void)removeIndicatorImmediately
+- (void)removeIndicator
 {
-    [self.indicator
-        removeFromSuperview];
+    [self.indicator removeFromSuperview];
 
     self.indicator = nil;
     self.indicatorWindow = nil;
 }
 
-- (void)showIndicatorForWindow:
+- (void)showIndicator:
     (UIWindow *)window
     side:(ABGEdgeSide)side
-    touchY:(CGFloat)touchY
+    y:(CGFloat)y
 {
     if (!gABGShowIndicator) {
         return;
     }
 
-    [self
-        removeIndicatorImmediately];
+    [self removeIndicator];
 
-    ABGBackIndicatorView *indicator =
+    ABGBackIndicatorView *view =
         [[ABGBackIndicatorView alloc]
-            initWithEdgeSide:
-                side];
+            initWithSide:side];
 
-    self.indicator =
-        indicator;
-
-    self.indicatorWindow =
-        window;
+    self.indicator = view;
+    self.indicatorWindow = window;
 
     CGFloat height =
-        CGRectGetHeight(
-            window.bounds
-        );
+        CGRectGetHeight(window.bounds);
 
-    CGFloat y =
+    CGFloat safeY =
         MAX(
-            35.0,
+            30.0,
             MIN(
-                touchY,
-                height - 35.0
+                y,
+                height - 30.0
             )
         );
 
@@ -1192,152 +835,110 @@ ABGApplyNativePopPolicyRecursively(
     if (side ==
         ABGEdgeSideLeft) {
 
-        x = -14.0;
+        x = -16.0;
 
     } else {
 
         x =
-            CGRectGetWidth(
-                window.bounds
-            ) +
-            14.0;
+            CGRectGetWidth(window.bounds)
+            + 16.0;
     }
 
-    indicator.center =
-        CGPointMake(
-            x,
-            y
-        );
+    view.center =
+        CGPointMake(x, safeY);
 
-    [indicator
-        setProgress:
-            0.0];
+    [view setGestureProgress:0.0];
 
-    [window
-        addSubview:
-            indicator];
+    [window addSubview:view];
 }
 
-- (void)updateIndicatorForSide:
+- (void)updateIndicator:
     (ABGEdgeSide)side
     progress:(CGFloat)progress
-    touchY:(CGFloat)touchY
+    y:(CGFloat)y
 {
-    ABGBackIndicatorView *indicator =
-        self.indicator;
-
-    UIWindow *window =
-        self.indicatorWindow;
-
-    if (!indicator ||
-        !window) {
+    if (!self.indicator ||
+        !self.indicatorWindow) {
 
         return;
     }
 
-    CGFloat normalized =
-        MAX(
-            0.0,
-            MIN(
-                progress,
-                1.25
-            )
-        );
+    UIWindow *window =
+        self.indicatorWindow;
 
     CGFloat width =
-        CGRectGetWidth(
-            window.bounds
-        );
+        CGRectGetWidth(window.bounds);
 
     CGFloat height =
-        CGRectGetHeight(
-            window.bounds
-        );
+        CGRectGetHeight(window.bounds);
 
-    CGFloat y =
+    CGFloat p =
         MAX(
-            35.0,
-            MIN(
-                touchY,
-                height - 35.0
-            )
+            0.0,
+            MIN(progress, 1.0)
         );
 
-    CGFloat visibleProgress =
-        MIN(
-            normalized,
-            1.0
-        );
-
-    CGFloat x;
+    CGFloat targetX;
 
     if (side ==
         ABGEdgeSideLeft) {
 
-        x =
-            -14.0 +
-            (
-                44.0 *
-                visibleProgress
-            );
+        targetX =
+            -16.0 +
+            (42.0 * p);
 
     } else {
 
-        x =
+        targetX =
             width +
-            14.0 -
-            (
-                44.0 *
-                visibleProgress
-            );
+            16.0 -
+            (42.0 * p);
     }
 
-    CGFloat oldY =
-        indicator.center.y;
-
-    CGFloat smoothY =
-        oldY +
-        (
-            (y - oldY) *
-            0.38
+    CGFloat safeY =
+        MAX(
+            30.0,
+            MIN(
+                y,
+                height - 30.0
+            )
         );
 
-    indicator.center =
+    CGFloat smoothY =
+        self.indicator.center.y +
+        (
+            safeY -
+            self.indicator.center.y
+        ) * 0.35;
+
+    self.indicator.center =
         CGPointMake(
-            x,
+            targetX,
             smoothY
         );
 
-    [indicator
-        setProgress:
-            normalized];
+    [self.indicator
+        setGestureProgress:p];
 }
 
-- (void)hideIndicatorForSide:
+- (void)hideIndicator:
     (ABGEdgeSide)side
     success:(BOOL)success
 {
+    if (!self.indicator ||
+        !self.indicatorWindow) {
+
+        [self removeIndicator];
+        return;
+    }
+
     ABGBackIndicatorView *indicator =
         self.indicator;
 
     UIWindow *window =
         self.indicatorWindow;
 
-    if (!indicator ||
-        !window) {
-
-        [self
-            removeIndicatorImmediately];
-
-        return;
-    }
-
-    CGFloat width =
-        CGRectGetWidth(
-            window.bounds
-        );
-
-    CGPoint target =
+    CGPoint point =
         indicator.center;
 
     if (success) {
@@ -1345,11 +946,11 @@ ABGApplyNativePopPolicyRecursively(
         if (side ==
             ABGEdgeSideLeft) {
 
-            target.x += 14.0;
+            point.x += 12.0;
 
         } else {
 
-            target.x -= 14.0;
+            point.x -= 12.0;
         }
 
     } else {
@@ -1357,136 +958,99 @@ ABGApplyNativePopPolicyRecursively(
         if (side ==
             ABGEdgeSideLeft) {
 
-            target.x =
-                -30.0;
+            point.x = -30.0;
 
         } else {
 
-            target.x =
-                width +
-                30.0;
+            point.x =
+                CGRectGetWidth(window.bounds)
+                + 30.0;
         }
     }
 
     [UIView
-        animateWithDuration:
-            0.15
-        delay:
-            0
+        animateWithDuration:0.14
+        delay:0
         options:
             UIViewAnimationOptionCurveEaseOut |
             UIViewAnimationOptionBeginFromCurrentState
         animations:^{
 
-            indicator.center =
-                target;
-
-            indicator.alpha =
-                0.0;
+            indicator.center = point;
+            indicator.alpha = 0.0;
 
             indicator.transform =
                 CGAffineTransformMakeScale(
-                    0.72,
-                    0.72
+                    0.75,
+                    0.75
                 );
-
         }
-        completion:
-            ^(BOOL finished) {
+        completion:^(BOOL finished) {
 
-                [indicator
-                    removeFromSuperview];
+            [indicator removeFromSuperview];
 
-                if (self.indicator ==
-                    indicator) {
+            if (self.indicator ==
+                indicator) {
 
-                    self.indicator =
-                        nil;
-
-                    self.indicatorWindow =
-                        nil;
-                }
-            }];
+                self.indicator = nil;
+                self.indicatorWindow = nil;
+            }
+        }];
 }
 
-#pragma mark Touch down filtering
+#pragma mark - Touch filtering
 
 - (BOOL)gestureRecognizer:
-    (UIGestureRecognizer *)
-        gestureRecognizer
+    (UIGestureRecognizer *)gesture
     shouldReceiveTouch:
     (UITouch *)touch
 {
-    if (!gABGEnabled) {
+    if (!gABGEnabled ||
+        !ABGProcessAllowed()) {
+
         return NO;
     }
 
-    if (!ABGProcessAllowed()) {
-        return NO;
-    }
-
-    if (![gestureRecognizer
+    if (![gesture
             isKindOfClass:
                 [UIPanGestureRecognizer class]]) {
 
         return NO;
     }
 
-    UIView *gestureView =
-        gestureRecognizer.view;
+    UIWindow *window =
+        (UIWindow *)gesture.view;
 
-    if (![gestureView
+    if (![window
             isKindOfClass:
                 [UIWindow class]]) {
 
         return NO;
     }
 
-    UIWindow *window =
-        (UIWindow *)gestureView;
-
-    if (!ABGWindowAllowed(
-            window)) {
-
+    if (!ABGWindowAllowed(window)) {
         return NO;
     }
 
-    CGPoint startPoint =
-        [touch
-            locationInView:
-                window];
+    CGPoint point =
+        [touch locationInView:window];
 
     CGFloat width =
-        CGRectGetWidth(
-            window.bounds
-        );
-
-    if (width <= 0.0) {
-        return NO;
-    }
+        CGRectGetWidth(window.bounds);
 
     ABGEdgeSide side =
         ABGEdgeSideNone;
 
-    /*
-     Xác định cạnh ngay khi touch-down.
-
-     Không đợi ngón tay di chuyển rồi mới
-     kiểm tra vị trí như bản cũ.
-    */
-
     if (gABGLeftEnabled &&
-        startPoint.x <=
-            gABGEdgeWidth) {
+        point.x <= gABGEdgeWidth) {
 
         side =
             ABGEdgeSideLeft;
 
     } else if (
         gABGRightEnabled &&
-        startPoint.x >=
-            width -
-            gABGEdgeWidth) {
+        point.x >=
+            width - gABGEdgeWidth) {
 
         side =
             ABGEdgeSideRight;
@@ -1499,14 +1063,14 @@ ABGApplyNativePopPolicyRecursively(
     }
 
     objc_setAssociatedObject(
-        gestureRecognizer,
+        gesture,
         &kABGSideKey,
         @(side),
         OBJC_ASSOCIATION_RETAIN_NONATOMIC
     );
 
     objc_setAssociatedObject(
-        gestureRecognizer,
+        gesture,
         &kABGThresholdKey,
         @NO,
         OBJC_ASSOCIATION_RETAIN_NONATOMIC
@@ -1515,60 +1079,30 @@ ABGApplyNativePopPolicyRecursively(
     return YES;
 }
 
-#pragma mark Gesture begin
+#pragma mark - Begin decision
 
 - (BOOL)gestureRecognizerShouldBegin:
-    (UIGestureRecognizer *)
-        recognizer
+    (UIGestureRecognizer *)gesture
 {
-    if (!gABGEnabled) {
-        return NO;
-    }
-
-    if (!ABGProcessAllowed()) {
-        return NO;
-    }
-
-    if (![recognizer
-            isKindOfClass:
-                [UIPanGestureRecognizer class]]) {
+    if (!gABGEnabled ||
+        !ABGProcessAllowed()) {
 
         return NO;
     }
 
-    UIView *gestureView =
-        recognizer.view;
-
-    if (![gestureView
-            isKindOfClass:
-                [UIWindow class]]) {
-
-        return NO;
-    }
-
-    UIWindow *window =
-        (UIWindow *)gestureView;
-
-    if (!ABGWindowAllowed(
-            window)) {
-
-        return NO;
-    }
-
-    NSNumber *sideNumber =
+    NSNumber *sideObject =
         objc_getAssociatedObject(
-            recognizer,
+            gesture,
             &kABGSideKey
         );
 
-    if (!sideNumber) {
+    if (!sideObject) {
         return NO;
     }
 
     ABGEdgeSide side =
         (ABGEdgeSide)
-            [sideNumber
-                integerValue];
+            sideObject.integerValue;
 
     if (side ==
         ABGEdgeSideNone) {
@@ -1576,95 +1110,72 @@ ABGApplyNativePopPolicyRecursively(
         return NO;
     }
 
+    UIWindow *window =
+        (UIWindow *)gesture.view;
+
+    if (![window
+            isKindOfClass:
+                [UIWindow class]]) {
+
+        return NO;
+    }
+
     UIPanGestureRecognizer *pan =
-        (UIPanGestureRecognizer *)
-            recognizer;
+        (UIPanGestureRecognizer *)gesture;
 
     CGPoint velocity =
-        [pan
-            velocityInView:
-                window];
+        [pan velocityInView:window];
 
     CGPoint translation =
-        [pan
-            translationInView:
-                window];
+        [pan translationInView:window];
 
-    CGFloat horizontal =
-        fabs(
-            velocity.x
-        );
-
-    CGFloat vertical =
-        fabs(
-            velocity.y
-        );
-
-    CGFloat directionX;
-
-    if (horizontal > 5.0) {
-
-        directionX =
-            velocity.x;
-
-    } else {
-
-        directionX =
-            translation.x;
-    }
+    CGFloat x =
+        fabs(velocity.x) > 4.0
+        ? velocity.x
+        : translation.x;
 
     /*
-     Mép trái:
-     phải vuốt sang phải.
+     Trái -> sang phải.
     */
-
     if (side ==
-        ABGEdgeSideLeft) {
-
-        if (directionX <= 0.0) {
-            return NO;
-        }
-    }
-
-    /*
-     Mép phải:
-     phải vuốt sang trái.
-    */
-
-    if (side ==
-        ABGEdgeSideRight) {
-
-        if (directionX >= 0.0) {
-            return NO;
-        }
-    }
-
-    /*
-     Nếu chuyển động thiên về chiều dọc,
-     để app xử lý scroll bình thường.
-    */
-
-    if (horizontal > 5.0 &&
-        vertical >
-            horizontal *
-            1.20) {
+            ABGEdgeSideLeft &&
+        x <= 0.0) {
 
         return NO;
     }
 
     /*
-     Nhường cạnh trái cho gesture gốc iOS
-     nếu tùy chọn này được bật.
+     Phải -> sang trái.
     */
+    if (side ==
+            ABGEdgeSideRight &&
+        x >= 0.0) {
 
+        return NO;
+    }
+
+    /*
+     Nếu chủ yếu kéo dọc thì nhường app.
+    */
+    if (fabs(velocity.y) >
+        fabs(velocity.x) * 1.25) {
+
+        return NO;
+    }
+
+    /*
+     SAFE:
+     Không disable interactivePopGestureRecognizer.
+
+     Nếu bật ưu tiên Back gốc iOS và màn hình hiện tại
+     có navigation pop chuẩn thì nhường cạnh trái cho iOS.
+    */
     if (side ==
             ABGEdgeSideLeft &&
         gABGPreferNativeLeft) {
 
         UIViewController *top =
-            ABGTopViewControllerForWindow(
-                window
-            );
+            ABGTopController(window);
 
         UINavigationController *nav =
             top.navigationController;
@@ -1672,12 +1183,10 @@ ABGApplyNativePopPolicyRecursively(
         if (!nav &&
             [top
                 isKindOfClass:
-                    [UINavigationController
-                        class]]) {
+                    [UINavigationController class]]) {
 
             nav =
-                (UINavigationController *)
-                    top;
+                (UINavigationController *)top;
         }
 
         if (nav &&
@@ -1689,45 +1198,30 @@ ABGApplyNativePopPolicyRecursively(
         }
     }
 
-    objc_setAssociatedObject(
-        pan,
-        &kABGThresholdKey,
-        @NO,
-        OBJC_ASSOCIATION_RETAIN_NONATOMIC
-    );
-
     return YES;
 }
 
-#pragma mark No simultaneous gesture
+#pragma mark - No simultaneous pan
 
 - (BOOL)gestureRecognizer:
-    (UIGestureRecognizer *)
-        gestureRecognizer
+    (UIGestureRecognizer *)gestureRecognizer
     shouldRecognizeSimultaneouslyWithGestureRecognizer:
-    (UIGestureRecognizer *)
-        otherGestureRecognizer
+    (UIGestureRecognizer *)otherGestureRecognizer
 {
     /*
-     Quan trọng:
-
-     Khi Android Back đã nhận gesture,
-     không cho UIScrollView / WKWebView /
-     UICollectionView / gesture của app
-     chạy song song.
+     Không cho scroll/web/game pan chạy đồng thời
+     sau khi gesture Back đã được nhận.
     */
-
     return NO;
 }
 
-#pragma mark Gesture processing
+#pragma mark - Handle pan
 
 - (void)handlePan:
-    (UIPanGestureRecognizer *)gesture
+    (UIPanGestureRecognizer *)pan
 {
     UIWindow *window =
-        (UIWindow *)
-            gesture.view;
+        (UIWindow *)pan.view;
 
     if (![window
             isKindOfClass:
@@ -1736,44 +1230,30 @@ ABGApplyNativePopPolicyRecursively(
         return;
     }
 
-    NSNumber *sideNumber =
+    NSNumber *sideObject =
         objc_getAssociatedObject(
-            gesture,
+            pan,
             &kABGSideKey
         );
 
-    if (!sideNumber) {
+    if (!sideObject) {
         return;
     }
 
     ABGEdgeSide side =
         (ABGEdgeSide)
-            [sideNumber
-                integerValue];
-
-    if (side ==
-        ABGEdgeSideNone) {
-
-        return;
-    }
+            sideObject.integerValue;
 
     CGPoint translation =
-        [gesture
-            translationInView:
-                window];
+        [pan translationInView:window];
 
     CGPoint velocity =
-        [gesture
-            velocityInView:
-                window];
+        [pan velocityInView:window];
 
     CGPoint location =
-        [gesture
-            locationInView:
-                window];
+        [pan locationInView:window];
 
-    CGFloat distance =
-        0.0;
+    CGFloat distance;
 
     if (side ==
         ABGEdgeSideLeft) {
@@ -1796,28 +1276,18 @@ ABGApplyNativePopPolicyRecursively(
     CGFloat progress =
         distance /
         MAX(
-            gABGTriggerDistance,
-            1.0
+            1.0,
+            gABGTriggerDistance
         );
 
-    switch (gesture.state) {
+    switch (pan.state) {
 
         case UIGestureRecognizerStateBegan:
         {
-            objc_setAssociatedObject(
-                gesture,
-                &kABGThresholdKey,
-                @NO,
-                OBJC_ASSOCIATION_RETAIN_NONATOMIC
-            );
-
             [self
-                showIndicatorForWindow:
-                    window
-                side:
-                    side
-                touchY:
-                    location.y];
+                showIndicator:window
+                side:side
+                y:location.y];
 
             break;
         }
@@ -1825,32 +1295,25 @@ ABGApplyNativePopPolicyRecursively(
         case UIGestureRecognizerStateChanged:
         {
             [self
-                updateIndicatorForSide:
-                    side
-                progress:
-                    progress
-                touchY:
-                    location.y];
+                updateIndicator:side
+                progress:progress
+                y:location.y];
 
-            BOOL currentlyTriggered =
+            BOOL reached =
                 distance >=
                     gABGTriggerDistance;
 
-            NSNumber *previous =
+            NSNumber *old =
                 objc_getAssociatedObject(
-                    gesture,
+                    pan,
                     &kABGThresholdKey
                 );
 
-            BOOL alreadyFired =
-                [previous
-                    boolValue];
-
-            if (currentlyTriggered &&
-                !alreadyFired) {
+            if (reached &&
+                !old.boolValue) {
 
                 objc_setAssociatedObject(
-                    gesture,
+                    pan,
                     &kABGThresholdKey,
                     @YES,
                     OBJC_ASSOCIATION_RETAIN_NONATOMIC
@@ -1858,18 +1321,13 @@ ABGApplyNativePopPolicyRecursively(
 
                 if (gABGHapticsEnabled) {
 
-                    UIImpactFeedbackGenerator
-                        *generator =
-
-                        [[UIImpactFeedbackGenerator
-                            alloc]
+                    UIImpactFeedbackGenerator *feedback =
+                        [[UIImpactFeedbackGenerator alloc]
                             initWithStyle:
                                 UIImpactFeedbackStyleLight];
 
-                    [generator prepare];
-
-                    [generator
-                        impactOccurred];
+                    [feedback prepare];
+                    [feedback impactOccurred];
                 }
             }
 
@@ -1878,85 +1336,60 @@ ABGApplyNativePopPolicyRecursively(
 
         case UIGestureRecognizerStateEnded:
         {
-            CGFloat horizontalVelocity =
-                fabs(
-                    velocity.x
-                );
-
-            BOOL distanceTriggered =
+            BOOL byDistance =
                 distance >=
                     gABGTriggerDistance;
 
-            BOOL velocityTriggered =
-                distance >=
-                    20.0 &&
-                horizontalVelocity >=
+            BOOL byVelocity =
+                distance >= 18.0 &&
+                fabs(velocity.x) >=
                     gABGMinimumVelocity;
 
-            BOOL directionValid =
-                YES;
+            BOOL correctDirection = YES;
 
             if (side ==
-                ABGEdgeSideLeft) {
+                    ABGEdgeSideLeft &&
+                velocity.x < -120.0) {
 
-                /*
-                 Nếu cuối gesture đang flick ngược
-                 ra ngoài thì hủy.
-                */
+                correctDirection = NO;
+            }
 
-                if (velocity.x <
-                    -120.0) {
+            if (side ==
+                    ABGEdgeSideRight &&
+                velocity.x > 120.0) {
 
-                    directionValid =
-                        NO;
-                }
-
-            } else {
-
-                if (velocity.x >
-                    120.0) {
-
-                    directionValid =
-                        NO;
-                }
+                correctDirection = NO;
             }
 
             BOOL shouldBack =
-                directionValid &&
+                correctDirection &&
                 (
-                    distanceTriggered ||
-                    velocityTriggered
+                    byDistance ||
+                    byVelocity
                 );
 
-            BOOL actionPerformed =
-                NO;
+            BOOL performed = NO;
 
             if (shouldBack) {
-
-                actionPerformed =
-                    ABGPerformBack(
-                        window
-                    );
+                performed =
+                    ABGPerformBack(window);
             }
 
             [self
-                hideIndicatorForSide:
-                    side
+                hideIndicator:side
                 success:
-                    (
-                        shouldBack &&
-                        actionPerformed
-                    )];
+                    shouldBack &&
+                    performed];
 
             objc_setAssociatedObject(
-                gesture,
+                pan,
                 &kABGSideKey,
                 nil,
                 OBJC_ASSOCIATION_RETAIN_NONATOMIC
             );
 
             objc_setAssociatedObject(
-                gesture,
+                pan,
                 &kABGThresholdKey,
                 nil,
                 OBJC_ASSOCIATION_RETAIN_NONATOMIC
@@ -1969,20 +1402,18 @@ ABGApplyNativePopPolicyRecursively(
         case UIGestureRecognizerStateFailed:
         {
             [self
-                hideIndicatorForSide:
-                    side
-                success:
-                    NO];
+                hideIndicator:side
+                success:NO];
 
             objc_setAssociatedObject(
-                gesture,
+                pan,
                 &kABGSideKey,
                 nil,
                 OBJC_ASSOCIATION_RETAIN_NONATOMIC
             );
 
             objc_setAssociatedObject(
-                gesture,
+                pan,
                 &kABGThresholdKey,
                 nil,
                 OBJC_ASSOCIATION_RETAIN_NONATOMIC
@@ -1998,101 +1429,80 @@ ABGApplyNativePopPolicyRecursively(
 
 @end
 
-#pragma mark - Gesture install
+#pragma mark - Install gesture
 
-static void
-ABGInstallOrUpdateGesture(
+static void ABGInstallGesture(
     UIWindow *window
 )
 {
-    if (!window) {
+    if (!window ||
+        !ABGProcessAllowed()) {
+
         return;
     }
 
-    ABGEdgePanGestureRecognizer *gesture =
+    if (!ABGWindowAllowed(window)) {
+        return;
+    }
+
+    UIPanGestureRecognizer *pan =
         objc_getAssociatedObject(
             window,
             &kABGPanGestureKey
         );
 
-    BOOL shouldEnable =
-        gABGEnabled &&
-        ABGProcessAllowed() &&
-        ABGWindowAllowed(
-            window
-        );
+    if (!pan) {
 
-    if (!gesture) {
-
-        if (!shouldEnable) {
-            return;
-        }
-
-        gesture =
-            [[ABGEdgePanGestureRecognizer
-                alloc]
+        pan =
+            [[UIPanGestureRecognizer alloc]
                 initWithTarget:
-                    [ABGGestureHandler
-                        shared]
+                    [ABGGestureHandler shared]
                 action:
-                    @selector(
-                        handlePan:
-                    )];
+                    @selector(handlePan:)];
 
-        gesture.minimumNumberOfTouches =
-            1;
-
-        gesture.maximumNumberOfTouches =
-            1;
+        pan.minimumNumberOfTouches = 1;
+        pan.maximumNumberOfTouches = 1;
 
         /*
-         Quan trọng:
+         Đây là phần chống "dính cảm ứng".
 
-         Khi Edge Back được recognize,
-         hủy touch của view bên dưới.
+         Khi recognizer xác nhận edge swipe,
+         UIKit sẽ cancel touch của view bên dưới.
         */
-
-        gesture.cancelsTouchesInView =
-            YES;
+        pan.cancelsTouchesInView = YES;
 
         /*
-         Touch sát cạnh sẽ được giữ lại ngắn
-         cho tới khi hệ thống biết đó là
-         Back hay chỉ là tap.
-
-         Nhờ vậy nút/list/game bên dưới không
-         bị nhận chạm trước rồi mới bị hủy.
+         Không cho control bên dưới nhận touch quá sớm.
         */
+        pan.delaysTouchesBegan = YES;
+        pan.delaysTouchesEnded = YES;
 
-        gesture.delaysTouchesBegan =
-            YES;
-
-        gesture.delaysTouchesEnded =
-            YES;
-
-        gesture.delegate =
+        pan.delegate =
             [ABGGestureHandler shared];
 
-        [window
-            addGestureRecognizer:
-                gesture];
+        [window addGestureRecognizer:pan];
 
         objc_setAssociatedObject(
             window,
             &kABGPanGestureKey,
-            gesture,
+            pan,
             OBJC_ASSOCIATION_RETAIN_NONATOMIC
         );
     }
 
-    gesture.enabled =
-        shouldEnable;
+    pan.enabled =
+        gABGEnabled &&
+        ABGProcessAllowed();
 }
 
 #pragma mark - Refresh windows
 
-static void ABGRefreshAllWindows(void)
+static void ABGRefreshWindows(void)
 {
+    if (!ABGProcessAllowed()) {
+        return;
+    }
+
     UIApplication *application =
         UIApplication.sharedApplication;
 
@@ -2114,41 +1524,15 @@ static void ABGRefreshAllWindows(void)
             for (UIWindow *window
                  in windowScene.windows) {
 
-                ABGInstallOrUpdateGesture(
-                    window
-                );
-
-                ABGApplyNativePopPolicyRecursively(
-                    window.rootViewController
-                );
+                ABGInstallGesture(window);
             }
         }
-
-    } else {
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-
-        for (UIWindow *window
-             in application.windows) {
-
-            ABGInstallOrUpdateGesture(
-                window
-            );
-
-            ABGApplyNativePopPolicyRecursively(
-                window.rootViewController
-            );
-        }
-
-#pragma clang diagnostic pop
     }
 }
 
-#pragma mark - Preferences changed
+#pragma mark - Preferences notification
 
-static void
-ABGPreferencesChanged(
+static void ABGPreferencesChanged(
     CFNotificationCenterRef center,
     void *observer,
     CFStringRef name,
@@ -2160,15 +1544,20 @@ ABGPreferencesChanged(
         dispatch_get_main_queue(),
         ^{
 
-            ABGLoadPreferences();
+            if (!ABGProcessAllowed()) {
+                return;
+            }
 
-            ABGRefreshAllWindows();
+            ABGLoadPreferences();
+            ABGRefreshWindows();
 
         }
     );
 }
 
-#pragma mark - UIWindow hooks
+#pragma mark - SAFE Hooks group
+
+%group ABGApplicationHooks
 
 %hook UIWindow
 
@@ -2176,18 +1565,14 @@ ABGPreferencesChanged(
 {
     %orig;
 
+    if (!ABGProcessAllowed()) {
+        return;
+    }
+
     dispatch_async(
         dispatch_get_main_queue(),
         ^{
-
-            ABGInstallOrUpdateGesture(
-                self
-            );
-
-            ABGApplyNativePopPolicyRecursively(
-                self.rootViewController
-            );
-
+            ABGInstallGesture(self);
         }
     );
 }
@@ -2197,18 +1582,14 @@ ABGPreferencesChanged(
 {
     %orig(controller);
 
+    if (!ABGProcessAllowed()) {
+        return;
+    }
+
     dispatch_async(
         dispatch_get_main_queue(),
         ^{
-
-            ABGInstallOrUpdateGesture(
-                self
-            );
-
-            ABGApplyNativePopPolicyRecursively(
-                controller
-            );
-
+            ABGInstallGesture(self);
         }
     );
 }
@@ -2218,81 +1599,21 @@ ABGPreferencesChanged(
 {
     %orig(hidden);
 
-    if (!hidden) {
+    if (hidden ||
+        !ABGProcessAllowed()) {
 
-        dispatch_async(
-            dispatch_get_main_queue(),
-            ^{
-
-                ABGInstallOrUpdateGesture(
-                    self
-                );
-
-            }
-        );
+        return;
     }
+
+    dispatch_async(
+        dispatch_get_main_queue(),
+        ^{
+            ABGInstallGesture(self);
+        }
+    );
 }
 
 %end
-
-#pragma mark - Navigation hooks
-
-%hook UINavigationController
-
-- (void)viewDidAppear:
-    (BOOL)animated
-{
-    %orig(animated);
-
-    ABGApplyNativePopPolicy(
-        self
-    );
-}
-
-- (void)setViewControllers:
-    (NSArray<UIViewController *> *)
-        viewControllers
-    animated:
-    (BOOL)animated
-{
-    %orig(
-        viewControllers,
-        animated
-    );
-
-    dispatch_async(
-        dispatch_get_main_queue(),
-        ^{
-
-            ABGApplyNativePopPolicy(
-                self
-            );
-
-        }
-    );
-}
-
-- (void)pushViewController:
-    (UIViewController *)viewController
-    animated:
-    (BOOL)animated
-{
-    %orig(
-        viewController,
-        animated
-    );
-
-    dispatch_async(
-        dispatch_get_main_queue(),
-        ^{
-
-            ABGApplyNativePopPolicy(
-                self
-            );
-
-        }
-    );
-}
 
 %end
 
@@ -2302,7 +1623,28 @@ ABGPreferencesChanged(
 {
     @autoreleasepool {
 
+        /*
+         QUAN TRỌNG NHẤT CỦA V2.2:
+
+         Dylib có thể được Substitute/RootHide load vào SpringBoard
+         vì SpringBoard cũng dùng UIApplication.
+
+         Nhưng chúng ta KHÔNG %init hook ở đó.
+
+         Vì vậy UIWindow của SpringBoard hoàn toàn không bị sửa.
+        */
+
+        if (ABGIsSpringBoard()) {
+            return;
+        }
+
+        if (!ABGProcessAllowed()) {
+            return;
+        }
+
         ABGLoadPreferences();
+
+        %init(ABGApplicationHooks);
 
         CFNotificationCenterAddObserver(
             CFNotificationCenterGetDarwinNotifyCenter(),
@@ -2316,9 +1658,7 @@ ABGPreferencesChanged(
         dispatch_async(
             dispatch_get_main_queue(),
             ^{
-
-                ABGRefreshAllWindows();
-
+                ABGRefreshWindows();
             }
         );
     }
