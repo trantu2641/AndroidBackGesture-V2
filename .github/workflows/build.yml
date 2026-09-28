@@ -3,9 +3,6 @@ name: Build AndroidBackGesture V2 RootHide
 on:
   workflow_dispatch:
 
-  push:
-    branches:
-      - main
     paths:
       - "Makefile"
       - "control"
