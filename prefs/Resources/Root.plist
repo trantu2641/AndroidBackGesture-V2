@@ -1,0 +1,150 @@
+{
+    title = "Android Back Gesture";
+
+    items = (
+
+        {
+            cell = PSGroupCell;
+            label = "Android Back Gesture";
+            footerText = "Vuốt từ mép trái hoặc phải để quay lại giống điều hướng bằng cử chỉ trên Android.";
+        },
+
+        {
+            cell = PSSwitchCell;
+            label = "Bật tweak";
+            defaults = "com.chatgpt.androidbackgestureprefs";
+            key = enabled;
+            default = 1;
+            PostNotification = "com.chatgpt.androidbackgestureprefs/Reload";
+        },
+
+        {
+            cell = PSGroupCell;
+            label = "Cạnh màn hình";
+        },
+
+        {
+            cell = PSSwitchCell;
+            label = "Vuốt từ mép trái";
+            defaults = "com.chatgpt.androidbackgestureprefs";
+            key = leftEnabled;
+            default = 1;
+            PostNotification = "com.chatgpt.androidbackgestureprefs/Reload";
+        },
+
+        {
+            cell = PSSwitchCell;
+            label = "Vuốt từ mép phải";
+            defaults = "com.chatgpt.androidbackgestureprefs";
+            key = rightEnabled;
+            default = 1;
+            PostNotification = "com.chatgpt.androidbackgestureprefs/Reload";
+        },
+
+        {
+            cell = PSSwitchCell;
+            label = "Ưu tiên Back gốc iOS ở mép trái";
+            defaults = "com.chatgpt.androidbackgestureprefs";
+            key = preferNativeLeft;
+            default = 0;
+            PostNotification = "com.chatgpt.androidbackgestureprefs/Reload";
+        },
+
+        {
+            cell = PSGroupCell;
+            label = "Hiệu ứng";
+        },
+
+        {
+            cell = PSSwitchCell;
+            label = "Hiện mũi tên Back";
+            defaults = "com.chatgpt.androidbackgestureprefs";
+            key = showIndicator;
+            default = 1;
+            PostNotification = "com.chatgpt.androidbackgestureprefs/Reload";
+        },
+
+        {
+            cell = PSSwitchCell;
+            label = "Phản hồi rung";
+            defaults = "com.chatgpt.androidbackgestureprefs";
+            key = haptics;
+            default = 1;
+            PostNotification = "com.chatgpt.androidbackgestureprefs/Reload";
+        },
+
+        {
+            cell = PSGroupCell;
+            label = "Độ nhạy";
+            footerText = "Vùng cạnh càng lớn thì có thể bắt đầu vuốt Back từ vị trí càng xa mép màn hình.";
+        },
+
+        {
+            cell = PSSliderCell;
+            label = "Vùng nhận cử chỉ";
+            defaults = "com.chatgpt.androidbackgestureprefs";
+            key = edgeWidth;
+            default = 28;
+            min = 8;
+            max = 80;
+            showValue = 1;
+            PostNotification = "com.chatgpt.androidbackgestureprefs/Reload";
+        },
+
+        {
+            cell = PSSliderCell;
+            label = "Khoảng cách kích hoạt";
+            defaults = "com.chatgpt.androidbackgestureprefs";
+            key = triggerDistance;
+            default = 78;
+            min = 35;
+            max = 160;
+            showValue = 1;
+            PostNotification = "com.chatgpt.androidbackgestureprefs/Reload";
+        },
+
+        {
+            cell = PSSliderCell;
+            label = "Tốc độ vuốt nhanh";
+            defaults = "com.chatgpt.androidbackgestureprefs";
+            key = minimumVelocity;
+            default = 650;
+            min = 200;
+            max = 1500;
+            showValue = 1;
+            PostNotification = "com.chatgpt.androidbackgestureprefs/Reload";
+        },
+
+        {
+            cell = PSGroupCell;
+            label = "Ứng dụng loại trừ";
+            footerText = "Nhập Bundle ID, cách nhau bằng dấu phẩy. Ví dụ: com.google.ios.youtube, com.facebook.Facebook";
+        },
+
+        {
+            cell = PSEditTextCell;
+            label = "Blacklist";
+            defaults = "com.chatgpt.androidbackgestureprefs";
+            key = blacklist;
+            default = "";
+            placeholder = "com.example.app";
+            PostNotification = "com.chatgpt.androidbackgestureprefs/Reload";
+        },
+
+        {
+            cell = PSGroupCell;
+            label = "Khôi phục";
+        },
+
+        {
+            cell = PSButtonCell;
+            label = "Khôi phục cài đặt mặc định";
+            action = resetPreferences;
+        },
+
+        {
+            cell = PSGroupCell;
+            footerText = "Android Back Gesture V2 • RootHide arm64e";
+        }
+    );
+}
