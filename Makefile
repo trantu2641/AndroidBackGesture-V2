@@ -13,7 +13,11 @@ TWEAK_NAME = AndroidBackGesture
 
 AndroidBackGesture_FILES = Tweak.xm
 AndroidBackGesture_CFLAGS = -fobjc-arc
-AndroidBackGesture_FRAMEWORKS = UIKit WebKit
+
+AndroidBackGesture_FRAMEWORKS = \
+	UIKit \
+	WebKit \
+	QuartzCore
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
