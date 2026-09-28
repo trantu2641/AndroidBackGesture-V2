@@ -6,7 +6,7 @@
 <dict>
 
     <key>CFBundleDevelopmentRegion</key>
-    <string>en</string>
+    <string>vi</string>
 
     <key>CFBundleExecutable</key>
     <string>AndroidBackGesturePrefs</string>
@@ -20,14 +20,20 @@
     <key>CFBundleName</key>
     <string>AndroidBackGesturePrefs</string>
 
+    <key>CFBundleDisplayName</key>
+    <string>Android Back Gesture</string>
+
     <key>CFBundlePackageType</key>
     <string>BNDL</string>
 
     <key>CFBundleShortVersionString</key>
-    <string>2.0</string>
+    <string>2.1</string>
 
     <key>CFBundleVersion</key>
-    <string>2.0</string>
+    <string>2.1</string>
+
+    <key>NSPrincipalClass</key>
+    <string>ABGRootListController</string>
 
 </dict>
 </plist>
