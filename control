@@ -1,0 +1,9 @@
+Package: com.chatgpt.androidbackgesture
+Name: Android Back Gesture
+Version: 2.0.0
+Architecture: iphoneos-arm64e
+Description: Android-style left and right edge Back gesture with visual indicator for RootHide.
+Maintainer: ChatGPT
+Author: ChatGPT
+Section: Tweaks
+Depends: mobilesubstrate, preferenceloader
