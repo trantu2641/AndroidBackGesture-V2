@@ -2,7 +2,7 @@ name: Build AndroidBackGesture V2 RootHide
 
 on:
   workflow_dispatch:
-
+  
     paths:
       - "Makefile"
       - "control"
@@ -25,21 +25,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install build dependencies
+
+      - name: Install dependencies
         run: |
           set -e
 
           brew update
-
-          brew install \
-            ldid \
-            make
+          brew install ldid make xz
 
           echo "$(brew --prefix make)/libexec/gnubin" >> "$GITHUB_PATH"
+
 
       - name: Install RootHide Theos
         run: |
           set -e
+
+          rm -rf "$GITHUB_WORKSPACE/theos"
 
           git clone \
             --recursive \
@@ -47,76 +48,158 @@ jobs:
             https://github.com/roothide/theos.git \
             "$GITHUB_WORKSPACE/theos"
 
-          echo "THEOS=$GITHUB_WORKSPACE/theos" \
-            >> "$GITHUB_ENV"
+          echo "THEOS=$GITHUB_WORKSPACE/theos" >> "$GITHUB_ENV"
 
-      - name: Install Theos SDKs
+
+      - name: Install patched iOS 16.5 SDK
         run: |
           set -e
 
+          mkdir -p "$GITHUB_WORKSPACE/theos/sdks"
+
           rm -rf \
-            "$GITHUB_WORKSPACE/theos/sdks"
+            "$GITHUB_WORKSPACE/theos/sdks/iPhoneOS16.5.sdk"
+
+          rm -rf "$RUNNER_TEMP/theos-sdks"
 
           git clone \
             --depth 1 \
+            --filter=blob:none \
+            --sparse \
             https://github.com/theos/sdks.git \
-            "$GITHUB_WORKSPACE/theos/sdks"
+            "$RUNNER_TEMP/theos-sdks"
 
-          echo "Installed SDKs:"
-          ls -lah \
-            "$GITHUB_WORKSPACE/theos/sdks"
+          cd "$RUNNER_TEMP/theos-sdks"
 
-      - name: Show environment
+          git sparse-checkout set \
+            iPhoneOS16.5.sdk
+
+          cp -R \
+            iPhoneOS16.5.sdk \
+            "$GITHUB_WORKSPACE/theos/sdks/iPhoneOS16.5.sdk"
+
+
+      - name: Verify iOS 16.5 SDK
         run: |
           set -e
+
+          SDK="$THEOS/sdks/iPhoneOS16.5.sdk"
+
+          echo "======================================"
+          echo "CHECKING SDK"
+          echo "======================================"
+
+          test -d "$SDK"
+
+          echo "SDK:"
+          echo "$SDK"
+
+          echo
+          echo "Private frameworks:"
+          ls -la "$SDK/System/Library/PrivateFrameworks" | head -50
+
+          echo
+          echo "Checking Preferences.framework..."
+
+          if [ ! -d \
+            "$SDK/System/Library/PrivateFrameworks/Preferences.framework" ]; then
+
+            echo "ERROR:"
+            echo "Preferences.framework is missing from patched SDK."
+            exit 1
+          fi
+
+          echo
+          echo "Preferences.framework found:"
+          find \
+            "$SDK/System/Library/PrivateFrameworks/Preferences.framework" \
+            -maxdepth 2 \
+            -type f \
+            -print
+
+          echo
+          echo "SDK verification OK"
+
+
+      - name: Show build environment
+        run: |
+          set -e
+
+          echo "======================================"
+          echo "ENVIRONMENT"
+          echo "======================================"
 
           echo "THEOS=$THEOS"
 
-          clang --version || true
-          make --version || true
+          echo
+          echo "Installed SDKs:"
+          find "$THEOS/sdks" \
+            -maxdepth 1 \
+            -type d \
+            -name "*.sdk" \
+            -print
+
+          echo
+          clang --version
+
+          echo
+          make --version
+
+          echo
+          which ldid
           ldid -h || true
 
-      - name: Clean old build
+
+      - name: Clean
         run: |
           set -e
+
+          echo "======================================"
+          echo "CLEANING"
+          echo "======================================"
 
           rm -rf packages
           rm -rf .theos
 
           make clean
 
-      - name: Build RootHide package
+
+      - name: Build RootHide arm64e
         run: |
           set -e
+
+          echo "======================================"
+          echo "BUILDING"
+          echo "======================================"
 
           make \
             package \
             FINALPACKAGE=1 \
+            DEBUG=0 \
             THEOS_PACKAGE_SCHEME=roothide
 
-      - name: Verify package
+
+      - name: Verify DEB
         run: |
           set -e
 
-          echo "=============================="
-          echo "Generated packages"
-          echo "=============================="
+          echo "======================================"
+          echo "GENERATED PACKAGE"
+          echo "======================================"
 
           find packages \
             -type f \
             -name "*.deb" \
             -print
 
-          echo "=============================="
-          echo "Package size"
-          echo "=============================="
-
-          ls -lh packages/*.deb
-
-          if ! ls packages/*.deb >/dev/null 2>&1; then
-            echo "ERROR: No DEB generated"
+          if ! compgen -G "packages/*.deb" > /dev/null; then
+            echo "ERROR: No .deb generated"
             exit 1
           fi
+
+          echo
+          ls -lh packages/*.deb
+
 
       - name: Upload RootHide DEB
         uses: actions/upload-artifact@v4
