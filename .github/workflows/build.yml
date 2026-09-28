@@ -1,0 +1,130 @@
+name: Build AndroidBackGesture V2 RootHide
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - main
+    paths:
+      - "Makefile"
+      - "control"
+      - "Tweak.xm"
+      - "AndroidBackGesture.plist"
+      - "prefs/**"
+      - "layout/**"
+      - ".github/workflows/build.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build RootHide arm64e
+    runs-on: macos-14
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          set -e
+
+          brew update
+
+          brew install \
+            ldid \
+            make
+
+          echo "$(brew --prefix make)/libexec/gnubin" >> "$GITHUB_PATH"
+
+      - name: Install RootHide Theos
+        run: |
+          set -e
+
+          git clone \
+            --recursive \
+            --depth 1 \
+            https://github.com/roothide/theos.git \
+            "$GITHUB_WORKSPACE/theos"
+
+          echo "THEOS=$GITHUB_WORKSPACE/theos" \
+            >> "$GITHUB_ENV"
+
+      - name: Install Theos SDKs
+        run: |
+          set -e
+
+          rm -rf \
+            "$GITHUB_WORKSPACE/theos/sdks"
+
+          git clone \
+            --depth 1 \
+            https://github.com/theos/sdks.git \
+            "$GITHUB_WORKSPACE/theos/sdks"
+
+          echo "Installed SDKs:"
+          ls -lah \
+            "$GITHUB_WORKSPACE/theos/sdks"
+
+      - name: Show environment
+        run: |
+          set -e
+
+          echo "THEOS=$THEOS"
+
+          clang --version || true
+          make --version || true
+          ldid -h || true
+
+      - name: Clean old build
+        run: |
+          set -e
+
+          rm -rf packages
+          rm -rf .theos
+
+          make clean
+
+      - name: Build RootHide package
+        run: |
+          set -e
+
+          make \
+            package \
+            FINALPACKAGE=1 \
+            THEOS_PACKAGE_SCHEME=roothide
+
+      - name: Verify package
+        run: |
+          set -e
+
+          echo "=============================="
+          echo "Generated packages"
+          echo "=============================="
+
+          find packages \
+            -type f \
+            -name "*.deb" \
+            -print
+
+          echo "=============================="
+          echo "Package size"
+          echo "=============================="
+
+          ls -lh packages/*.deb
+
+          if ! ls packages/*.deb >/dev/null 2>&1; then
+            echo "ERROR: No DEB generated"
+            exit 1
+          fi
+
+      - name: Upload RootHide DEB
+        uses: actions/upload-artifact@v4
+        with:
+          name: AndroidBackGesture-V2-RootHide-arm64e
+          path: packages/*.deb
+          if-no-files-found: error
+          compression-level: 0
