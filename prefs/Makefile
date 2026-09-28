@@ -1,5 +1,5 @@
 ARCHS = arm64e
-TARGET := iphone:clang:latest:15.0
+TARGET := iphone:clang:16.5:15.0
 
 THEOS_PACKAGE_SCHEME = roothide
 
@@ -14,7 +14,8 @@ AndroidBackGesturePrefs_CFLAGS = \
 	-fobjc-arc
 
 AndroidBackGesturePrefs_FRAMEWORKS = \
-	UIKit
+	UIKit \
+	Foundation
 
 AndroidBackGesturePrefs_PRIVATE_FRAMEWORKS = \
 	Preferences
