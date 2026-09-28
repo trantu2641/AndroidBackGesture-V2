@@ -19,9 +19,8 @@
             <string>Android Back Gesture</string>
 
             <key>footerText</key>
-            <string>Vuốt từ mép trái hoặc phải để quay lại giống điều hướng bằng cử chỉ Android.</string>
+            <string>Vuốt từ cạnh màn hình để quay lại. V2.2 SAFE không can thiệp gesture của SpringBoard.</string>
         </dict>
-
 
         <dict>
             <key>cell</key>
@@ -43,18 +42,13 @@
             <string>com.chatgpt.androidbackgestureprefs/Reload</string>
         </dict>
 
-
         <dict>
             <key>cell</key>
             <string>PSGroupCell</string>
 
             <key>label</key>
             <string>Cạnh màn hình</string>
-
-            <key>footerText</key>
-            <string>Chọn cạnh được phép kích hoạt cử chỉ Back.</string>
         </dict>
-
 
         <dict>
             <key>cell</key>
@@ -76,7 +70,6 @@
             <string>com.chatgpt.androidbackgestureprefs/Reload</string>
         </dict>
 
-
         <dict>
             <key>cell</key>
             <string>PSSwitchCell</string>
@@ -97,7 +90,6 @@
             <string>com.chatgpt.androidbackgestureprefs/Reload</string>
         </dict>
 
-
         <dict>
             <key>cell</key>
             <string>PSSwitchCell</string>
@@ -112,12 +104,11 @@
             <string>preferNativeLeft</string>
 
             <key>default</key>
-            <false/>
+            <true/>
 
             <key>PostNotification</key>
             <string>com.chatgpt.androidbackgestureprefs/Reload</string>
         </dict>
-
 
         <dict>
             <key>cell</key>
@@ -125,11 +116,7 @@
 
             <key>label</key>
             <string>Hiệu ứng</string>
-
-            <key>footerText</key>
-            <string>Hiển thị mũi tên và phản hồi rung khi đạt ngưỡng quay lại.</string>
         </dict>
-
 
         <dict>
             <key>cell</key>
@@ -151,7 +138,6 @@
             <string>com.chatgpt.androidbackgestureprefs/Reload</string>
         </dict>
 
-
         <dict>
             <key>cell</key>
             <string>PSSwitchCell</string>
@@ -172,7 +158,6 @@
             <string>com.chatgpt.androidbackgestureprefs/Reload</string>
         </dict>
 
-
         <dict>
             <key>cell</key>
             <string>PSGroupCell</string>
@@ -181,9 +166,8 @@
             <string>Độ nhạy</string>
 
             <key>footerText</key>
-            <string>Vùng cạnh càng lớn thì càng dễ bắt đầu cử chỉ. Khoảng cách kích hoạt càng thấp thì thao tác Back càng nhẹ.</string>
+            <string>Khi cử chỉ Back đã được nhận, cảm ứng kéo của màn hình bên dưới sẽ bị hủy để tránh dính thao tác.</string>
         </dict>
-
 
         <dict>
             <key>cell</key>
@@ -199,13 +183,13 @@
             <string>edgeWidth</string>
 
             <key>default</key>
-            <real>28.0</real>
+            <real>28</real>
 
             <key>min</key>
-            <real>8.0</real>
+            <real>8</real>
 
             <key>max</key>
-            <real>80.0</real>
+            <real>80</real>
 
             <key>showValue</key>
             <true/>
@@ -213,7 +197,6 @@
             <key>PostNotification</key>
             <string>com.chatgpt.androidbackgestureprefs/Reload</string>
         </dict>
-
 
         <dict>
             <key>cell</key>
@@ -229,13 +212,13 @@
             <string>triggerDistance</string>
 
             <key>default</key>
-            <real>78.0</real>
+            <real>72</real>
 
             <key>min</key>
-            <real>35.0</real>
+            <real>30</real>
 
             <key>max</key>
-            <real>160.0</real>
+            <real>160</real>
 
             <key>showValue</key>
             <true/>
@@ -243,7 +226,6 @@
             <key>PostNotification</key>
             <string>com.chatgpt.androidbackgestureprefs/Reload</string>
         </dict>
-
 
         <dict>
             <key>cell</key>
@@ -259,13 +241,13 @@
             <string>minimumVelocity</string>
 
             <key>default</key>
-            <real>650.0</real>
+            <real>650</real>
 
             <key>min</key>
-            <real>200.0</real>
+            <real>200</real>
 
             <key>max</key>
-            <real>1500.0</real>
+            <real>1500</real>
 
             <key>showValue</key>
             <true/>
@@ -273,7 +255,6 @@
             <key>PostNotification</key>
             <string>com.chatgpt.androidbackgestureprefs/Reload</string>
         </dict>
-
 
         <dict>
             <key>cell</key>
@@ -283,9 +264,8 @@
             <string>Ứng dụng loại trừ</string>
 
             <key>footerText</key>
-            <string>Nhập Bundle ID của app không muốn dùng tweak. Nhiều Bundle ID có thể phân cách bằng dấu phẩy.</string>
+            <string>Nhập Bundle ID và phân cách bằng dấu phẩy.</string>
         </dict>
-
 
         <dict>
             <key>cell</key>
@@ -310,7 +290,6 @@
             <string>com.chatgpt.androidbackgestureprefs/Reload</string>
         </dict>
 
-
         <dict>
             <key>cell</key>
             <string>PSGroupCell</string>
@@ -318,7 +297,6 @@
             <key>label</key>
             <string>Khôi phục</string>
         </dict>
-
 
         <dict>
             <key>cell</key>
@@ -331,13 +309,12 @@
             <string>resetPreferences</string>
         </dict>
 
-
         <dict>
             <key>cell</key>
             <string>PSGroupCell</string>
 
             <key>footerText</key>
-            <string>Android Back Gesture V2.1 • RootHide arm64e</string>
+            <string>Android Back Gesture V2.2 SAFE • RootHide arm64e</string>
         </dict>
 
     </array>
