@@ -1,4 +1,4 @@
-name: Build AndroidBackGesture V2 RootHide
+name: Build AndroidBackGesture V2.1 RootHide
 
 on:
   workflow_dispatch:
@@ -19,8 +19,11 @@ permissions:
   contents: read
 
 jobs:
+
   build:
+
     name: Build RootHide arm64e
+
     runs-on: macos-14
 
     steps:
@@ -34,16 +37,23 @@ jobs:
           set -e
 
           brew update
-          brew install ldid make xz
 
-          echo "$(brew --prefix make)/libexec/gnubin" >> "$GITHUB_PATH"
+          brew install \
+            ldid \
+            make \
+            xz \
+            dpkg
+
+          echo "$(brew --prefix make)/libexec/gnubin" \
+            >> "$GITHUB_PATH"
 
 
       - name: Install RootHide Theos
         run: |
           set -e
 
-          rm -rf "$GITHUB_WORKSPACE/theos"
+          rm -rf \
+            "$GITHUB_WORKSPACE/theos"
 
           git clone \
             --recursive \
@@ -51,19 +61,22 @@ jobs:
             https://github.com/roothide/theos.git \
             "$GITHUB_WORKSPACE/theos"
 
-          echo "THEOS=$GITHUB_WORKSPACE/theos" >> "$GITHUB_ENV"
+          echo "THEOS=$GITHUB_WORKSPACE/theos" \
+            >> "$GITHUB_ENV"
 
 
       - name: Install patched iOS 16.5 SDK
         run: |
           set -e
 
-          mkdir -p "$GITHUB_WORKSPACE/theos/sdks"
+          mkdir -p \
+            "$GITHUB_WORKSPACE/theos/sdks"
 
           rm -rf \
             "$GITHUB_WORKSPACE/theos/sdks/iPhoneOS16.5.sdk"
 
-          rm -rf "$RUNNER_TEMP/theos-sdks"
+          rm -rf \
+            "$RUNNER_TEMP/theos-sdks"
 
           git clone \
             --depth 1 \
@@ -72,7 +85,8 @@ jobs:
             https://github.com/theos/sdks.git \
             "$RUNNER_TEMP/theos-sdks"
 
-          cd "$RUNNER_TEMP/theos-sdks"
+          cd \
+            "$RUNNER_TEMP/theos-sdks"
 
           git sparse-checkout set \
             iPhoneOS16.5.sdk
@@ -82,49 +96,35 @@ jobs:
             "$GITHUB_WORKSPACE/theos/sdks/iPhoneOS16.5.sdk"
 
 
-      - name: Verify iOS 16.5 SDK
+      - name: Verify SDK
         run: |
           set -e
 
           SDK="$THEOS/sdks/iPhoneOS16.5.sdk"
 
           echo "======================================"
-          echo "CHECKING SDK"
+          echo "VERIFY SDK"
           echo "======================================"
 
-          test -d "$SDK"
-
-          echo "SDK:"
-          echo "$SDK"
-
-          echo
-          echo "Private frameworks:"
-          ls -la "$SDK/System/Library/PrivateFrameworks" | head -50
-
-          echo
-          echo "Checking Preferences.framework..."
-
-          if [ ! -d \
-            "$SDK/System/Library/PrivateFrameworks/Preferences.framework" ]; then
-
-            echo "ERROR:"
-            echo "Preferences.framework is missing from patched SDK."
+          if [ ! -d "$SDK" ]; then
+            echo "ERROR: iPhoneOS16.5.sdk missing"
             exit 1
           fi
 
-          echo
-          echo "Preferences.framework found:"
-          find \
-            "$SDK/System/Library/PrivateFrameworks/Preferences.framework" \
-            -maxdepth 2 \
-            -type f \
-            -print
+          echo "Found SDK:"
+          echo "$SDK"
 
-          echo
-          echo "SDK verification OK"
+          PREFS="$SDK/System/Library/PrivateFrameworks/Preferences.framework"
+
+          if [ ! -d "$PREFS" ]; then
+            echo "ERROR: Preferences.framework missing"
+            exit 1
+          fi
+
+          echo "Preferences.framework OK"
 
 
-      - name: Show build environment
+      - name: Show environment
         run: |
           set -e
 
@@ -134,23 +134,23 @@ jobs:
 
           echo "THEOS=$THEOS"
 
-          echo
-          echo "Installed SDKs:"
-          find "$THEOS/sdks" \
-            -maxdepth 1 \
-            -type d \
-            -name "*.sdk" \
-            -print
-
-          echo
           clang --version
 
           echo
+
           make --version
 
           echo
+
           which ldid
-          ldid -h || true
+
+          echo
+
+          find "$THEOS/sdks" \
+            -maxdepth 1 \
+            -name "*.sdk" \
+            -type d \
+            -print
 
 
       - name: Clean
@@ -167,7 +167,7 @@ jobs:
           make clean
 
 
-      - name: Build RootHide arm64e
+      - name: Build RootHide package
         run: |
           set -e
 
@@ -182,12 +182,12 @@ jobs:
             THEOS_PACKAGE_SCHEME=roothide
 
 
-      - name: Verify DEB
+      - name: Find DEB
         run: |
           set -e
 
           echo "======================================"
-          echo "GENERATED PACKAGE"
+          echo "GENERATED PACKAGES"
           echo "======================================"
 
           find packages \
@@ -195,19 +195,101 @@ jobs:
             -name "*.deb" \
             -print
 
-          if ! compgen -G "packages/*.deb" > /dev/null; then
-            echo "ERROR: No .deb generated"
+          if ! compgen -G \
+            "packages/*.deb" \
+            > /dev/null; then
+
+            echo "ERROR: No DEB generated"
             exit 1
           fi
 
+          ls -lh \
+            packages/*.deb
+
+
+      - name: Verify PreferenceLoader files
+        run: |
+          set -e
+
+          DEB="$(find packages \
+            -type f \
+            -name '*.deb' \
+            | head -1)"
+
+          echo "======================================"
+          echo "VERIFY SETTINGS FILES"
+          echo "======================================"
+
+          echo "DEB:"
+          echo "$DEB"
+
+          dpkg-deb \
+            -c "$DEB" \
+            | tee /tmp/androidback-files.txt
+
           echo
-          ls -lh packages/*.deb
+          echo "Checking PreferenceLoader entry..."
+
+          if ! grep -q \
+            "PreferenceLoader/Preferences/AndroidBackGesture.plist" \
+            /tmp/androidback-files.txt; then
+
+            echo "ERROR:"
+            echo "AndroidBackGesture PreferenceLoader entry missing"
+            exit 1
+          fi
+
+          echo "PreferenceLoader entry OK"
+
+          echo
+          echo "Checking PreferenceBundle..."
+
+          if ! grep -q \
+            "PreferenceBundles/AndroidBackGesturePrefs.bundle" \
+            /tmp/androidback-files.txt; then
+
+            echo "ERROR:"
+            echo "AndroidBackGesturePrefs.bundle missing"
+            exit 1
+          fi
+
+          echo "PreferenceBundle OK"
+
+
+      - name: Extract DEB for detailed verification
+        run: |
+          set -e
+
+          DEB="$(find packages \
+            -type f \
+            -name '*.deb' \
+            | head -1)"
+
+          rm -rf \
+            "$RUNNER_TEMP/androidback-deb"
+
+          mkdir -p \
+            "$RUNNER_TEMP/androidback-deb"
+
+          dpkg-deb \
+            -x "$DEB" \
+            "$RUNNER_TEMP/androidback-deb"
+
+          echo "======================================"
+          echo "EXTRACTED PACKAGE"
+          echo "======================================"
+
+          find \
+            "$RUNNER_TEMP/androidback-deb" \
+            -type f \
+            -o \
+            -type l
 
 
       - name: Upload RootHide DEB
         uses: actions/upload-artifact@v4
         with:
-          name: AndroidBackGesture-V2-RootHide-arm64e
+          name: AndroidBackGesture-V2.1-RootHide-arm64e
           path: packages/*.deb
           if-no-files-found: error
           compression-level: 0
