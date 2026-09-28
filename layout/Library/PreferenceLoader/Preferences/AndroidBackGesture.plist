@@ -1,0 +1,8 @@
+{
+    entry = {
+        bundle = AndroidBackGesturePrefs;
+        cell = PSLinkCell;
+        detail = ABGRootListController;
+        label = "Android Back Gesture";
+    };
+}
