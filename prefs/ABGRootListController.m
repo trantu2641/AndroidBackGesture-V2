@@ -1,13 +1,15 @@
 #import "ABGRootListController.h"
 
-#import <Preferences/PSSpecifier.h>
 #import <Foundation/Foundation.h>
+#import <Preferences/PSSpecifier.h>
 
 static NSString * const ABGPreferencesDomain =
     @"com.chatgpt.androidbackgestureprefs";
 
 static CFStringRef const ABGReloadNotification =
-    CFSTR("com.chatgpt.androidbackgestureprefs/Reload");
+    CFSTR(
+        "com.chatgpt.androidbackgestureprefs/Reload"
+    );
 
 @implementation ABGRootListController
 
@@ -17,8 +19,10 @@ static CFStringRef const ABGReloadNotification =
 
         _specifiers =
             [self
-                loadSpecifiersFromPlistName:@"Root"
-                target:self];
+                loadSpecifiersFromPlistName:
+                    @"Root"
+                target:
+                    self];
     }
 
     return _specifiers;
