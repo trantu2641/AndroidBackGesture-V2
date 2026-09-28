@@ -1,0 +1,11 @@
+{
+    CFBundleDevelopmentRegion = English;
+    CFBundleExecutable = AndroidBackGesturePrefs;
+    CFBundleIdentifier = "com.chatgpt.androidbackgestureprefs";
+    CFBundleInfoDictionaryVersion = "6.0";
+    CFBundleName = AndroidBackGesturePrefs;
+    CFBundlePackageType = BNDL;
+    CFBundleShortVersionString = "2.0";
+    CFBundleVersion = "2.0";
+    NSPrincipalClass = ABGRootListController;
+}
