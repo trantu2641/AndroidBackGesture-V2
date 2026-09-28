@@ -17,6 +17,9 @@
         <key>detail</key>
         <string>ABGRootListController</string>
 
+        <key>isController</key>
+        <true/>
+
         <key>label</key>
         <string>Android Back Gesture</string>
 
