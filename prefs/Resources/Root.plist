@@ -11,8 +11,6 @@
     <key>items</key>
     <array>
 
-        <!-- ===== HEADER ===== -->
-
         <dict>
             <key>cell</key>
             <string>PSGroupCell</string>
@@ -21,11 +19,9 @@
             <string>Android Back Gesture</string>
 
             <key>footerText</key>
-            <string>Vuốt từ mép trái hoặc phải để quay lại giống điều hướng bằng cử chỉ trên Android.</string>
+            <string>Vuốt từ mép trái hoặc phải để quay lại giống điều hướng bằng cử chỉ Android.</string>
         </dict>
 
-
-        <!-- ===== MASTER SWITCH ===== -->
 
         <dict>
             <key>cell</key>
@@ -48,8 +44,6 @@
         </dict>
 
 
-        <!-- ===== EDGE SETTINGS ===== -->
-
         <dict>
             <key>cell</key>
             <string>PSGroupCell</string>
@@ -58,7 +52,7 @@
             <string>Cạnh màn hình</string>
 
             <key>footerText</key>
-            <string>Chọn cạnh màn hình được phép kích hoạt thao tác quay lại.</string>
+            <string>Chọn cạnh được phép kích hoạt cử chỉ Back.</string>
         </dict>
 
 
@@ -125,8 +119,6 @@
         </dict>
 
 
-        <!-- ===== EFFECTS ===== -->
-
         <dict>
             <key>cell</key>
             <string>PSGroupCell</string>
@@ -135,7 +127,7 @@
             <string>Hiệu ứng</string>
 
             <key>footerText</key>
-            <string>Hiển thị phản hồi trực quan và rung khi thao tác Back đạt ngưỡng kích hoạt.</string>
+            <string>Hiển thị mũi tên và phản hồi rung khi đạt ngưỡng quay lại.</string>
         </dict>
 
 
@@ -181,8 +173,6 @@
         </dict>
 
 
-        <!-- ===== SENSITIVITY ===== -->
-
         <dict>
             <key>cell</key>
             <string>PSGroupCell</string>
@@ -191,7 +181,7 @@
             <string>Độ nhạy</string>
 
             <key>footerText</key>
-            <string>Vùng cạnh càng lớn thì có thể bắt đầu vuốt Back từ vị trí càng xa mép màn hình.</string>
+            <string>Vùng cạnh càng lớn thì càng dễ bắt đầu cử chỉ. Khoảng cách kích hoạt càng thấp thì thao tác Back càng nhẹ.</string>
         </dict>
 
 
@@ -285,8 +275,6 @@
         </dict>
 
 
-        <!-- ===== BLACKLIST ===== -->
-
         <dict>
             <key>cell</key>
             <string>PSGroupCell</string>
@@ -295,7 +283,7 @@
             <string>Ứng dụng loại trừ</string>
 
             <key>footerText</key>
-            <string>Nhập Bundle ID của các ứng dụng không muốn dùng tweak. Có thể nhập nhiều Bundle ID và phân cách bằng dấu phẩy.</string>
+            <string>Nhập Bundle ID của app không muốn dùng tweak. Nhiều Bundle ID có thể phân cách bằng dấu phẩy.</string>
         </dict>
 
 
@@ -323,8 +311,6 @@
         </dict>
 
 
-        <!-- ===== RESET ===== -->
-
         <dict>
             <key>cell</key>
             <string>PSGroupCell</string>
@@ -346,14 +332,12 @@
         </dict>
 
 
-        <!-- ===== FOOTER ===== -->
-
         <dict>
             <key>cell</key>
             <string>PSGroupCell</string>
 
             <key>footerText</key>
-            <string>Android Back Gesture V2 • RootHide arm64e</string>
+            <string>Android Back Gesture V2.1 • RootHide arm64e</string>
         </dict>
 
     </array>
