@@ -1,11 +1,33 @@
-{
-    CFBundleDevelopmentRegion = English;
-    CFBundleExecutable = AndroidBackGesturePrefs;
-    CFBundleIdentifier = "com.chatgpt.androidbackgestureprefs";
-    CFBundleInfoDictionaryVersion = "6.0";
-    CFBundleName = AndroidBackGesturePrefs;
-    CFBundlePackageType = BNDL;
-    CFBundleShortVersionString = "2.0";
-    CFBundleVersion = "2.0";
-    NSPrincipalClass = ABGRootListController;
-}
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+"http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+
+<plist version="1.0">
+<dict>
+
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+
+    <key>CFBundleExecutable</key>
+    <string>AndroidBackGesturePrefs</string>
+
+    <key>CFBundleIdentifier</key>
+    <string>com.chatgpt.androidbackgestureprefs</string>
+
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+
+    <key>CFBundleName</key>
+    <string>AndroidBackGesturePrefs</string>
+
+    <key>CFBundlePackageType</key>
+    <string>BNDL</string>
+
+    <key>CFBundleShortVersionString</key>
+    <string>2.0</string>
+
+    <key>CFBundleVersion</key>
+    <string>2.0</string>
+
+</dict>
+</plist>
