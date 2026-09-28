@@ -1,150 +1,362 @@
-{
-    title = "Android Back Gesture";
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+"http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 
-    items = (
+<plist version="1.0">
+<dict>
 
-        {
-            cell = PSGroupCell;
-            label = "Android Back Gesture";
-            footerText = "Vuốt từ mép trái hoặc phải để quay lại giống điều hướng bằng cử chỉ trên Android.";
-        },
+    <key>title</key>
+    <string>Android Back Gesture</string>
 
-        {
-            cell = PSSwitchCell;
-            label = "Bật tweak";
-            defaults = "com.chatgpt.androidbackgestureprefs";
-            key = enabled;
-            default = 1;
-            PostNotification = "com.chatgpt.androidbackgestureprefs/Reload";
-        },
+    <key>items</key>
+    <array>
 
-        {
-            cell = PSGroupCell;
-            label = "Cạnh màn hình";
-        },
+        <!-- ===== HEADER ===== -->
 
-        {
-            cell = PSSwitchCell;
-            label = "Vuốt từ mép trái";
-            defaults = "com.chatgpt.androidbackgestureprefs";
-            key = leftEnabled;
-            default = 1;
-            PostNotification = "com.chatgpt.androidbackgestureprefs/Reload";
-        },
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
 
-        {
-            cell = PSSwitchCell;
-            label = "Vuốt từ mép phải";
-            defaults = "com.chatgpt.androidbackgestureprefs";
-            key = rightEnabled;
-            default = 1;
-            PostNotification = "com.chatgpt.androidbackgestureprefs/Reload";
-        },
+            <key>label</key>
+            <string>Android Back Gesture</string>
 
-        {
-            cell = PSSwitchCell;
-            label = "Ưu tiên Back gốc iOS ở mép trái";
-            defaults = "com.chatgpt.androidbackgestureprefs";
-            key = preferNativeLeft;
-            default = 0;
-            PostNotification = "com.chatgpt.androidbackgestureprefs/Reload";
-        },
+            <key>footerText</key>
+            <string>Vuốt từ mép trái hoặc phải để quay lại giống điều hướng bằng cử chỉ trên Android.</string>
+        </dict>
 
-        {
-            cell = PSGroupCell;
-            label = "Hiệu ứng";
-        },
 
-        {
-            cell = PSSwitchCell;
-            label = "Hiện mũi tên Back";
-            defaults = "com.chatgpt.androidbackgestureprefs";
-            key = showIndicator;
-            default = 1;
-            PostNotification = "com.chatgpt.androidbackgestureprefs/Reload";
-        },
+        <!-- ===== MASTER SWITCH ===== -->
 
-        {
-            cell = PSSwitchCell;
-            label = "Phản hồi rung";
-            defaults = "com.chatgpt.androidbackgestureprefs";
-            key = haptics;
-            default = 1;
-            PostNotification = "com.chatgpt.androidbackgestureprefs/Reload";
-        },
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
 
-        {
-            cell = PSGroupCell;
-            label = "Độ nhạy";
-            footerText = "Vùng cạnh càng lớn thì có thể bắt đầu vuốt Back từ vị trí càng xa mép màn hình.";
-        },
+            <key>label</key>
+            <string>Bật tweak</string>
 
-        {
-            cell = PSSliderCell;
-            label = "Vùng nhận cử chỉ";
-            defaults = "com.chatgpt.androidbackgestureprefs";
-            key = edgeWidth;
-            default = 28;
-            min = 8;
-            max = 80;
-            showValue = 1;
-            PostNotification = "com.chatgpt.androidbackgestureprefs/Reload";
-        },
+            <key>defaults</key>
+            <string>com.chatgpt.androidbackgestureprefs</string>
 
-        {
-            cell = PSSliderCell;
-            label = "Khoảng cách kích hoạt";
-            defaults = "com.chatgpt.androidbackgestureprefs";
-            key = triggerDistance;
-            default = 78;
-            min = 35;
-            max = 160;
-            showValue = 1;
-            PostNotification = "com.chatgpt.androidbackgestureprefs/Reload";
-        },
+            <key>key</key>
+            <string>enabled</string>
 
-        {
-            cell = PSSliderCell;
-            label = "Tốc độ vuốt nhanh";
-            defaults = "com.chatgpt.androidbackgestureprefs";
-            key = minimumVelocity;
-            default = 650;
-            min = 200;
-            max = 1500;
-            showValue = 1;
-            PostNotification = "com.chatgpt.androidbackgestureprefs/Reload";
-        },
+            <key>default</key>
+            <true/>
 
-        {
-            cell = PSGroupCell;
-            label = "Ứng dụng loại trừ";
-            footerText = "Nhập Bundle ID, cách nhau bằng dấu phẩy. Ví dụ: com.google.ios.youtube, com.facebook.Facebook";
-        },
+            <key>PostNotification</key>
+            <string>com.chatgpt.androidbackgestureprefs/Reload</string>
+        </dict>
 
-        {
-            cell = PSEditTextCell;
-            label = "Blacklist";
-            defaults = "com.chatgpt.androidbackgestureprefs";
-            key = blacklist;
-            default = "";
-            placeholder = "com.example.app";
-            PostNotification = "com.chatgpt.androidbackgestureprefs/Reload";
-        },
 
-        {
-            cell = PSGroupCell;
-            label = "Khôi phục";
-        },
+        <!-- ===== EDGE SETTINGS ===== -->
 
-        {
-            cell = PSButtonCell;
-            label = "Khôi phục cài đặt mặc định";
-            action = resetPreferences;
-        },
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
 
-        {
-            cell = PSGroupCell;
-            footerText = "Android Back Gesture V2 • RootHide arm64e";
-        }
-    );
-}
+            <key>label</key>
+            <string>Cạnh màn hình</string>
+
+            <key>footerText</key>
+            <string>Chọn cạnh màn hình được phép kích hoạt thao tác quay lại.</string>
+        </dict>
+
+
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+
+            <key>label</key>
+            <string>Vuốt từ mép trái</string>
+
+            <key>defaults</key>
+            <string>com.chatgpt.androidbackgestureprefs</string>
+
+            <key>key</key>
+            <string>leftEnabled</string>
+
+            <key>default</key>
+            <true/>
+
+            <key>PostNotification</key>
+            <string>com.chatgpt.androidbackgestureprefs/Reload</string>
+        </dict>
+
+
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+
+            <key>label</key>
+            <string>Vuốt từ mép phải</string>
+
+            <key>defaults</key>
+            <string>com.chatgpt.androidbackgestureprefs</string>
+
+            <key>key</key>
+            <string>rightEnabled</string>
+
+            <key>default</key>
+            <true/>
+
+            <key>PostNotification</key>
+            <string>com.chatgpt.androidbackgestureprefs/Reload</string>
+        </dict>
+
+
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+
+            <key>label</key>
+            <string>Ưu tiên Back gốc iOS ở mép trái</string>
+
+            <key>defaults</key>
+            <string>com.chatgpt.androidbackgestureprefs</string>
+
+            <key>key</key>
+            <string>preferNativeLeft</string>
+
+            <key>default</key>
+            <false/>
+
+            <key>PostNotification</key>
+            <string>com.chatgpt.androidbackgestureprefs/Reload</string>
+        </dict>
+
+
+        <!-- ===== EFFECTS ===== -->
+
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+
+            <key>label</key>
+            <string>Hiệu ứng</string>
+
+            <key>footerText</key>
+            <string>Hiển thị phản hồi trực quan và rung khi thao tác Back đạt ngưỡng kích hoạt.</string>
+        </dict>
+
+
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+
+            <key>label</key>
+            <string>Hiện mũi tên Back</string>
+
+            <key>defaults</key>
+            <string>com.chatgpt.androidbackgestureprefs</string>
+
+            <key>key</key>
+            <string>showIndicator</string>
+
+            <key>default</key>
+            <true/>
+
+            <key>PostNotification</key>
+            <string>com.chatgpt.androidbackgestureprefs/Reload</string>
+        </dict>
+
+
+        <dict>
+            <key>cell</key>
+            <string>PSSwitchCell</string>
+
+            <key>label</key>
+            <string>Phản hồi rung</string>
+
+            <key>defaults</key>
+            <string>com.chatgpt.androidbackgestureprefs</string>
+
+            <key>key</key>
+            <string>haptics</string>
+
+            <key>default</key>
+            <true/>
+
+            <key>PostNotification</key>
+            <string>com.chatgpt.androidbackgestureprefs/Reload</string>
+        </dict>
+
+
+        <!-- ===== SENSITIVITY ===== -->
+
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+
+            <key>label</key>
+            <string>Độ nhạy</string>
+
+            <key>footerText</key>
+            <string>Vùng cạnh càng lớn thì có thể bắt đầu vuốt Back từ vị trí càng xa mép màn hình.</string>
+        </dict>
+
+
+        <dict>
+            <key>cell</key>
+            <string>PSSliderCell</string>
+
+            <key>label</key>
+            <string>Vùng nhận cử chỉ</string>
+
+            <key>defaults</key>
+            <string>com.chatgpt.androidbackgestureprefs</string>
+
+            <key>key</key>
+            <string>edgeWidth</string>
+
+            <key>default</key>
+            <real>28.0</real>
+
+            <key>min</key>
+            <real>8.0</real>
+
+            <key>max</key>
+            <real>80.0</real>
+
+            <key>showValue</key>
+            <true/>
+
+            <key>PostNotification</key>
+            <string>com.chatgpt.androidbackgestureprefs/Reload</string>
+        </dict>
+
+
+        <dict>
+            <key>cell</key>
+            <string>PSSliderCell</string>
+
+            <key>label</key>
+            <string>Khoảng cách kích hoạt</string>
+
+            <key>defaults</key>
+            <string>com.chatgpt.androidbackgestureprefs</string>
+
+            <key>key</key>
+            <string>triggerDistance</string>
+
+            <key>default</key>
+            <real>78.0</real>
+
+            <key>min</key>
+            <real>35.0</real>
+
+            <key>max</key>
+            <real>160.0</real>
+
+            <key>showValue</key>
+            <true/>
+
+            <key>PostNotification</key>
+            <string>com.chatgpt.androidbackgestureprefs/Reload</string>
+        </dict>
+
+
+        <dict>
+            <key>cell</key>
+            <string>PSSliderCell</string>
+
+            <key>label</key>
+            <string>Tốc độ vuốt nhanh</string>
+
+            <key>defaults</key>
+            <string>com.chatgpt.androidbackgestureprefs</string>
+
+            <key>key</key>
+            <string>minimumVelocity</string>
+
+            <key>default</key>
+            <real>650.0</real>
+
+            <key>min</key>
+            <real>200.0</real>
+
+            <key>max</key>
+            <real>1500.0</real>
+
+            <key>showValue</key>
+            <true/>
+
+            <key>PostNotification</key>
+            <string>com.chatgpt.androidbackgestureprefs/Reload</string>
+        </dict>
+
+
+        <!-- ===== BLACKLIST ===== -->
+
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+
+            <key>label</key>
+            <string>Ứng dụng loại trừ</string>
+
+            <key>footerText</key>
+            <string>Nhập Bundle ID của các ứng dụng không muốn dùng tweak. Có thể nhập nhiều Bundle ID và phân cách bằng dấu phẩy.</string>
+        </dict>
+
+
+        <dict>
+            <key>cell</key>
+            <string>PSEditTextCell</string>
+
+            <key>label</key>
+            <string>Blacklist</string>
+
+            <key>defaults</key>
+            <string>com.chatgpt.androidbackgestureprefs</string>
+
+            <key>key</key>
+            <string>blacklist</string>
+
+            <key>default</key>
+            <string></string>
+
+            <key>placeholder</key>
+            <string>com.example.app</string>
+
+            <key>PostNotification</key>
+            <string>com.chatgpt.androidbackgestureprefs/Reload</string>
+        </dict>
+
+
+        <!-- ===== RESET ===== -->
+
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+
+            <key>label</key>
+            <string>Khôi phục</string>
+        </dict>
+
+
+        <dict>
+            <key>cell</key>
+            <string>PSButtonCell</string>
+
+            <key>label</key>
+            <string>Khôi phục cài đặt mặc định</string>
+
+            <key>action</key>
+            <string>resetPreferences</string>
+        </dict>
+
+
+        <!-- ===== FOOTER ===== -->
+
+        <dict>
+            <key>cell</key>
+            <string>PSGroupCell</string>
+
+            <key>footerText</key>
+            <string>Android Back Gesture V2 • RootHide arm64e</string>
+        </dict>
+
+    </array>
+
+</dict>
+</plist>
